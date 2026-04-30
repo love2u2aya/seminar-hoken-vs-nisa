@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>保険 vs NISA シミュレーター</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    background: #f5f7fa;
+    color: #2d3748;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+    color: white;
+    padding: 28px 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 1.5rem; font-weight: 700; }
+  header p { margin-top: 6px; font-size: 0.85rem; opacity: 0.82; }
+
+  .container { max-width: 820px; margin: 0 auto; padding: 24px 16px 56px; }
+
+  /* 共通設定カード */
+  .common-card {
+    background: white;
+    border-radius: 16px;
+    padding: 22px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+    color: #4a5568;
+  }
+
+  .common-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 560px) { .common-grid { grid-template-columns: 1fr; } }
+
+  /* 期間ボタン */
+  .period-buttons { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .period-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #718096;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .period-btn.active { background: #553c9a; border-color: #553c9a; color: white; }
+  .period-custom {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.85rem; color: #718096;
+  }
+  .period-custom input {
+    width: 60px; padding: 7px 8px;
+    border: 1.5px solid #e2e8f0; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 700; text-align: center; outline: none;
+  }
+  .period-custom input:focus { border-color: #553c9a; }
+
+  /* 月額表示 */
+  .monthly-display {
+    background: #f0f4ff;
+    border: 1.5px solid #c3dafe;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: #3c366b;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+  .monthly-display span { font-size: 1.1rem; font-weight: 800; }
+
+  /* 設定カード2列 */
+  .rate-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 560px) { .rate-cards { grid-template-columns: 1fr; } }
+
+  .rate-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  .rate-card .section-title { margin-bottom: 12px; }
+  .rate-card.insurance .section-title { color: #2b6cb0; border-color: #bee3f8; }
+  .rate-card.nisa .section-title { color: #276749; border-color: #c6f6d5; }
+
+  /* 入力フィールド */
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 0.76rem; color: #718096; margin-bottom: 5px; font-weight: 600; }
+  .input-wrap {
+    display: flex; align-items: center;
+    background: #f7fafc; border: 1.5px solid #e2e8f0;
+    border-radius: 8px; overflow: hidden; transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within { border-color: #4299e1; }
+  .input-wrap input {
+    flex: 1; border: none; background: transparent;
+    padding: 9px 12px; font-size: 1rem; font-weight: 600;
+    color: #2d3748; outline: none; width: 100%;
+  }
+  .input-wrap .unit { padding: 9px 12px 9px 4px; font-size: 0.8rem; color: #a0aec0; white-space: nowrap; }
+
+  /* ブレ説明 */
+  .sigma-note {
+    font-size: 0.72rem; color: #718096; margin-top: 6px; line-height: 1.6;
+  }
+  .sigma-note .hi { color: #276749; font-weight: 700; }
+  .sigma-note .lo { color: #c53030; font-weight: 700; }
+
+  /* 実行ボタン */
+  .calc-btn {
+    display: block; width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #2b6cb0, #276749);
+    color: white; font-size: 1rem; font-weight: 700;
+    border: none; border-radius: 12px; cursor: pointer;
+    letter-spacing: 0.04em; transition: opacity 0.2s, transform 0.1s;
+    margin-bottom: 24px;
+  }
+  .calc-btn:hover { opacity: 0.92; }
+  .calc-btn:active { transform: scale(0.98); }
+
+  /* 結果 */
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .result-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media (max-width: 560px) { .result-cards { grid-template-columns: 1fr; } }
+
+  .result-card { border-radius: 16px; padding: 20px; text-align: center; }
+  .result-card.insurance { background: linear-gradient(135deg, #ebf8ff, #bee3f8); }
+  .result-card.nisa { background: linear-gradient(135deg, #f0fff4, #c6f6d5); }
+
+  .result-card .rlabel { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .result-card.insurance .rlabel { color: #2b6cb0; }
+  .result-card.nisa .rlabel { color: #276749; }
+
+  .result-card .amount { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .result-card.insurance .amount { color: #1a365d; }
+  .result-card.nisa .amount { color: #1c4532; }
+
+  .result-card .sub { font-size: 0.78rem; color: #718096; margin-top: 2px; }
+
+  .result-card .badge {
+    display: inline-block; margin-top: 8px; padding: 3px 10px;
+    border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+  }
+  .result-card.insurance .badge { background: #2b6cb0; color: white; }
+
+  .nisa-range { margin-top: 8px; }
+  .nisa-range .range-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.78rem; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .nisa-range .range-row:last-child { border-bottom: none; }
+  .nisa-range .range-row .rlbl { color: #718096; }
+  .nisa-range .range-row .rval { font-weight: 700; }
+  .nisa-range .hi { color: #276749; }
+  .nisa-range .mid { color: #2d7d46; }
+  .nisa-range .lo { color: #c53030; }
+
+  /* グラフ */
+  .chart-card {
+    background: white; border-radius: 16px;
+    padding: 22px 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    margin-bottom: 16px;
+  }
+  .chart-card h3 { font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 4px; text-align: center; }
+  .chart-card .chart-sub { font-size: 0.72rem; color: #a0aec0; text-align: center; margin-bottom: 14px; }
+
+  /* 凡例カスタム */
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 14px; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.76rem; font-weight: 600; color: #4a5568; }
+  .legend-dot { width: 12px; height: 4px; border-radius: 2px; }
+
+  /* 注意書き */
+  .note-card {
+    background: #fffbeb; border: 1.5px solid #fbd38d;
+    border-radius: 12px; padding: 14px 16px;
+    font-size: 0.76rem; color: #744210; line-height: 1.7;
+  }
+  .note-card strong { display: block; margin-bottom: 4px; font-size: 0.78rem; }
+
+  .reset-btn {
+    display: block; width: 100%; padding: 11px;
+    background: white; color: #718096; font-size: 0.85rem; font-weight: 600;
+    border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer;
+    margin-top: 14px; transition: background 0.15s;
+  }
+  .reset-btn:hover { background: #f7fafc; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>保険 vs NISA シミュレーター</h1>
+  <p>同じ金額を投じたとき、10年後・20年後はどうなる？</p>
+</header>
+
+<div class="container">
+
+  <!-- 共通設定 -->
+  <div class="common-card">
+    <div class="section-title">共通設定</div>
+    <div class="common-grid">
+      <div>
+        <div class="field">
+          <label>投資総額（保険元本 ＝ NISA積立合計）</label>
+          <div class="input-wrap">
+            <input type="number" id="total" value="500" min="1" max="99999" oninput="updateMonthly()">
+            <span class="unit">万円</span>
+          </div>
+        </div>
+        <div class="monthly-display" id="monthly-display">
+          NISAの月額積立：<span id="monthly-val">—</span> 万円 / 月
+        </div>
+      </div>
+      <div class="field">
+        <label>運用期間</label>
+        <div class="period-buttons">
+          <button class="period-btn active" data-years="10" onclick="selectPeriod(10)">10年</button>
+          <button class="period-btn" data-years="20" onclick="selectPeriod(20)">20年</button>
+          <button class="period-btn" data-years="30" onclick="selectPeriod(30)">30年</button>
+          <div class="period-custom">
+            <span>他：</span>
+            <input type="number" id="period-custom" placeholder="15" min="1" max="50" oninput="selectCustomPeriod(this.value)">
+            <span>年</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 利率設定 -->
+  <div class="rate-cards">
+    <div class="rate-card insurance">
+      <div class="section-title">一時払い保険</div>
+      <div class="field">
+        <label>利率（年率）</label>
+        <div class="input-wrap">
+          <input type="number" id="ins-rate" value="4" min="0.1" max="30" step="0.1">
+          <span class="unit">%</span>
+        </div>
+      </div>
+    </div>
+    <div class="rate-card nisa">
+      <div class="section-title">NISA（つみたて）</div>
+      <div class="field">
+        <label>想定利率（年率）</label>
+        <div class="input-wrap">
+          <input type="number" id="nisa-rate" value="8" min="0.1" max="30" step="0.1">
+          <span class="unit">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>ブレ幅・標準偏差（年率）</label>
+        <div class="input-wrap">
+          <input type="number" id="nisa-sigma" value="15" min="1" max="50" step="1">
+          <span class="unit">%</span>
+        </div>
+      </div>
+      <div class="sigma-note">
+        オルカン（全世界株式）の標準偏差は歴史的に約15%。<br>
+        <span class="hi">楽観シナリオ</span>：利率＋ブレ幅　／　<span class="lo">悲観シナリオ</span>：利率－ブレ幅
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">シミュレーション実行</button>
+
+  <!-- 結果 -->
+  <div class="results" id="results">
+
+    <div class="result-cards">
+      <div class="result-card insurance">
+        <div class="rlabel">一時払い保険（確実）</div>
+        <div class="amount" id="ins-result">—</div>
+        <div class="sub">万円</div>
+        <div class="badge" id="ins-gain">— 万円増</div>
+      </div>
+      <div class="result-card nisa">
+        <div class="rlabel">NISA（つみたて）</div>
+        <div class="amount" id="nisa-mid-result">—</div>
+        <div class="sub">万円（中央値）</div>
+        <div class="nisa-range">
+          <div class="range-row">
+            <span class="rlbl">楽観シナリオ</span>
+            <span class="rval hi" id="nisa-hi-result">— 万円</span>
+          </div>
+          <div class="range-row">
+            <span class="rlbl">中央値</span>
+            <span class="rval mid" id="nisa-mid-result2">— 万円</span>
+          </div>
+          <div class="range-row">
+            <span class="rlbl">悲観シナリオ</span>
+            <span class="rval lo" id="nisa-lo-result">— 万円</span>
+          </div>
+          <div class="range-row">
+            <span class="rlbl">積立元本</span>
+            <span class="rval" id="nisa-principal-result" style="color:#718096">— 万円</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>年ごとの資産推移</h3>
+      <div class="chart-sub">NISAの緑の帯＝ブレの範囲（±1σシナリオ）</div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#2b6cb0;height:3px"></div>保険（確実）</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#38a169"></div>NISA 中央値</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(56,161,105,0.25);width:20px;height:10px;border-radius:3px"></div>NISAのブレ幅</div>
+      </div>
+      <canvas id="chart" height="240"></canvas>
+    </div>
+
+    <div class="note-card">
+      <strong>ご注意</strong>
+      一時払い保険の数値は概算です。実際の返戻率は商品・加入時期により異なります。
+      NISAの楽観・悲観シナリオは「年率±標準偏差」を一定とした簡易試算であり、実際の値動きとは異なります。
+      為替変動は含みません。このシミュレーターは情報提供を目的としており、特定の商品の購入を推奨するものではありません。
+    </div>
+
+    <button class="reset-btn" onclick="resetResults()">条件をリセットして再計算</button>
+  </div>
+
+</div>
+
+<script>
+let selectedYears = 10;
+let chartInstance = null;
+
+// 初期化
+window.addEventListener('DOMContentLoaded', () => updateMonthly());
+
+function updateMonthly() {
+  const total = parseFloat(document.getElementById('total').value) || 0;
+  const monthly = total / (selectedYears * 12);
+  document.getElementById('monthly-val').textContent =
+    isFinite(monthly) ? monthly.toFixed(2) : '—';
+}
+
+function selectPeriod(years) {
+  selectedYears = years;
+  document.querySelectorAll('.period-btn').forEach(btn =>
+    btn.classList.toggle('active', parseInt(btn.dataset.years) === years)
+  );
+  document.getElementById('period-custom').value = '';
+  updateMonthly();
+}
+
+function selectCustomPeriod(val) {
+  const y = parseInt(val);
+  if (y >= 1 && y <= 50) {
+    selectedYears = y;
+    document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+    updateMonthly();
+  }
+}
+
+function nisaDCA(monthlyAmt, annualRate, years) {
+  const months = years * 12;
+  if (annualRate === 0) return monthlyAmt * months;
+  const mr = annualRate / 12;
+  return monthlyAmt * (Math.pow(1 + mr, months) - 1) / mr;
+}
+
+function calculate() {
+  const total      = parseFloat(document.getElementById('total').value) || 0;
+  const insRate    = parseFloat(document.getElementById('ins-rate').value) / 100 || 0;
+  const nisaRate   = parseFloat(document.getElementById('nisa-rate').value) / 100 || 0;
+  const nisaSigma  = parseFloat(document.getElementById('nisa-sigma').value) / 100 || 0;
+  const years      = selectedYears;
+
+  const monthly    = total / (years * 12);
+  const nisaPrincipal = total;
+
+  // 保険
+  const insFV   = total * Math.pow(1 + insRate, years);
+  const insGain = insFV - total;
+
+  // NISA 3シナリオ
+  const rateHi  = nisaRate + nisaSigma;
+  const rateMid = nisaRate;
+  const rateLo  = nisaRate - nisaSigma;
+
+  const nisaHi  = nisaDCA(monthly, rateHi,  years);
+  const nisaMid = nisaDCA(monthly, rateMid, years);
+  const nisaLo  = nisaDCA(monthly, rateLo,  years);
+
+  // サマリー表示
+  document.getElementById('ins-result').textContent   = fmt(insFV);
+  document.getElementById('ins-gain').textContent     = `${insGain >= 0 ? '+' : ''}${fmt(insGain)} 万円増`;
+  document.getElementById('nisa-mid-result').textContent  = fmt(nisaMid);
+  document.getElementById('nisa-hi-result').textContent   = `${fmt(nisaHi)} 万円`;
+  document.getElementById('nisa-mid-result2').textContent = `${fmt(nisaMid)} 万円`;
+  document.getElementById('nisa-lo-result').textContent   = `${fmt(nisaLo)} 万円`;
+  document.getElementById('nisa-principal-result').textContent = `${fmt(nisaPrincipal)} 万円`;
+
+  drawChart(total, insRate, monthly, nisaRate, nisaSigma, years);
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function fmt(v) {
+  return Math.round(v).toLocaleString('ja-JP');
+}
+
+function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years) {
+  const labels   = [];
+  const insData  = [];
+  const nisaHiD  = [];
+  const nisaMidD = [];
+  const nisaLoD  = [];
+
+  const rateHi  = nisaRate + nisaSigma;
+  const rateMid = nisaRate;
+  const rateLo  = nisaRate - nisaSigma;
+
+  for (let y = 0; y <= years; y++) {
+    labels.push(`${y}年`);
+    insData.push(Math.round(total * Math.pow(1 + insRate, y)));
+    nisaHiD.push(Math.round(nisaDCA(monthly, rateHi,  y)));
+    nisaMidD.push(Math.round(nisaDCA(monthly, rateMid, y)));
+    nisaLoD.push(Math.round(nisaDCA(monthly, rateLo,  y)));
+  }
+
+  if (chartInstance) chartInstance.destroy();
+
+  const ctx = document.getElementById('chart').getContext('2d');
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        // 保険
+        {
+          label: '保険（確実）',
+          data: insData,
+          borderColor: '#2b6cb0',
+          backgroundColor: 'rgba(43,108,176,0.07)',
+          borderWidth: 3,
+          pointRadius: 2,
+          tension: 0.3,
+          fill: false,
+          order: 1,
+        },
+        // NISA 楽観（バンド上端）
+        {
+          label: 'NISA 楽観',
+          data: nisaHiD,
+          borderColor: 'rgba(56,161,105,0.5)',
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          tension: 0.3,
+          fill: '+1',
+          backgroundColor: 'rgba(56,161,105,0.13)',
+          order: 3,
+        },
+        // NISA 悲観（バンド下端）
+        {
+          label: 'NISA 悲観',
+          data: nisaLoD,
+          borderColor: 'rgba(197,48,48,0.45)',
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          tension: 0.3,
+          fill: false,
+          order: 4,
+        },
+        // NISA 中央値
+        {
+          label: 'NISA 中央値',
+          data: nisaMidD,
+          borderColor: '#38a169',
+          borderWidth: 2.5,
+          pointRadius: 2,
+          tension: 0.3,
+          fill: false,
+          order: 2,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: c => {
+              const map = {
+                '保険（確実）': '保険',
+                'NISA 中央値': 'NISA 中央値',
+                'NISA 楽観':  'NISA 楽観',
+                'NISA 悲観':  'NISA 悲観',
+              };
+              const lbl = map[c.dataset.label] || c.dataset.label;
+              return ` ${lbl}：${c.parsed.y.toLocaleString('ja-JP')} 万円`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback: v => `${v.toLocaleString('ja-JP')}万`,
+            font: { size: 11 }
+          },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          ticks: { font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function resetResults() {
+  document.getElementById('results').classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

@@ -706,15 +706,36 @@ function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths)
         legend: { display: false },
         tooltip: {
           filter: c => !c.dataset._isMC,
+          // 保険系を上、NISA系を下に並べる
+          itemSort: (a, b) => {
+            const grp = lbl => /保険/.test(lbl) && !/NISA/.test(lbl) ? 0 : 1;
+            const ord = lbl => {
+              if (lbl === '保険（確実）')      return 0;
+              if (/^保険・元本/.test(lbl))     return 1;
+              if (lbl === 'NISA 中央値')        return 2;
+              if (lbl === 'NISA 楽観')          return 3;
+              if (lbl === 'NISA 悲観')          return 4;
+              if (lbl === 'NISA・積立累計')     return 5;
+              return 9;
+            };
+            const ga = grp(a.dataset.label), gb = grp(b.dataset.label);
+            if (ga !== gb) return ga - gb;
+            return ord(a.dataset.label) - ord(b.dataset.label);
+          },
           callbacks: {
             label: c => {
               const map = {
-                '保険（確実）': '保険',
-                'NISA 中央値': 'NISA 中央値',
-                'NISA 楽観':  'NISA 楽観',
-                'NISA 悲観':  'NISA 悲観',
+                '保険（確実）':       '【保険】 評価額',
+                'NISA 中央値':         '【NISA】 中央値',
+                'NISA 楽観':           '【NISA】 楽観',
+                'NISA 悲観':           '【NISA】 悲観',
+                'NISA・積立累計':      '【NISA】 積立累計',
               };
-              const lbl = map[c.dataset.label] || c.dataset.label;
+              let lbl = map[c.dataset.label];
+              if (!lbl && /^保険・元本/.test(c.dataset.label)) {
+                lbl = '【保険】 元本';
+              }
+              if (!lbl) lbl = c.dataset.label;
               return ` ${lbl}：${c.parsed.y.toLocaleString('ja-JP')} 万円`;
             },
             afterBody: items => {
@@ -731,8 +752,7 @@ function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths)
               const pct = ((below / N) * 100).toFixed(1);
               return [
                 '',
-                `積立累計：${fmt(cumPrincipal)} 万円`,
-                `元本割れ：${below} / ${N} 本（${pct}%）`
+                `└ 元本割れ：${below} / ${N} 本（${pct}%）`
               ];
             }
           }

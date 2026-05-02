@@ -313,19 +313,20 @@
       <div class="field">
         <label>ブレ幅・標準偏差（年率）</label>
         <div class="input-wrap">
-          <input type="number" id="nisa-sigma" value="15" min="1" max="50" step="1">
+          <input type="number" id="nisa-sigma" value="18" min="1" max="50" step="1">
           <span class="unit">%</span>
         </div>
       </div>
       <div class="sigma-note">
-        オルカン（全世界株式）の標準偏差は歴史的に約15%。<br>
+        MSCI ACWI（オルカンの指標）はUSD建てで歴史的に約15.8%。<br>
+        日本人は円建てで保有するため、為替変動を含めると <strong>約18〜20%</strong> が実感値。<br>
         <span class="hi">楽観シナリオ</span>：利率＋ブレ幅　／　<span class="lo">悲観シナリオ</span>：利率－ブレ幅
       </div>
 
       <!-- モンテカルロ切替 -->
       <div class="mc-toggle">
         <label class="switch">
-          <input type="checkbox" id="mc-enabled" onchange="toggleMC()">
+          <input type="checkbox" id="mc-enabled" checked onchange="toggleMC()">
           <span class="slider-sw"></span>
         </label>
         <div class="mc-label">
@@ -333,11 +334,11 @@
           <span class="mc-desc">±σ帯ではなく、ランダムに動いた複数パスで表示</span>
         </div>
       </div>
-      <div class="mc-options" id="mc-options" style="display:none;">
+      <div class="mc-options" id="mc-options">
         <div class="field" style="margin:0;">
           <label>シミュレーション本数</label>
           <div class="input-wrap">
-            <input type="number" id="mc-paths" value="30" min="3" max="200" step="1">
+            <input type="number" id="mc-paths" value="50" min="3" max="2000" step="1">
             <span class="unit">本</span>
           </div>
         </div>
@@ -412,7 +413,11 @@ let selectedYears = 10;
 let chartInstance = null;
 
 // 初期化
-window.addEventListener('DOMContentLoaded', () => updateMonthly());
+window.addEventListener('DOMContentLoaded', () => {
+  updateMonthly();
+  // モンテカルロは既定ON：オプションUIを表示状態に
+  document.getElementById('mc-options').style.display = 'flex';
+});
 
 function updateMonthly() {
   const total = parseFloat(document.getElementById('total').value) || 0;
@@ -501,7 +506,7 @@ function calculate() {
 
   if (mcOn) {
     // モンテカルロ：N本の最終値からパーセンタイルを取る
-    const N = Math.max(3, Math.min(200, parseInt(document.getElementById('mc-paths').value) || 30));
+    const N = Math.max(3, Math.min(2000, parseInt(document.getElementById('mc-paths').value) || 50));
     mcPaths = [];
     for (let i = 0; i < N; i++) {
       mcPaths.push(nisaRandomPath(monthly, nisaRate, nisaSigma, years));
@@ -601,18 +606,23 @@ function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths)
       const vals = mcPaths.map(p => p[y]).slice().sort((a, b) => a - b);
       median.push(Math.round(vals[Math.floor(vals.length / 2)]));
     }
-    // 個別パス
-    mcPaths.forEach((p, i) => {
+    // 個別パス（描画は最大100本にサンプリング）
+    const drawMax = 100;
+    const drawIdx = mcPaths.length <= drawMax
+      ? mcPaths.map((_, i) => i)
+      : Array.from({ length: drawMax }, (_, k) => Math.floor(k * mcPaths.length / drawMax));
+    const lineAlpha = mcPaths.length > 100 ? 0.10 : 0.18;
+    drawIdx.forEach(i => {
+      const p = mcPaths[i];
       datasets.push({
         label: `パス${i + 1}`,
         data: p.map(v => Math.round(v)),
-        borderColor: 'rgba(56,161,105,0.18)',
+        borderColor: `rgba(56,161,105,${lineAlpha})`,
         borderWidth: 1,
         pointRadius: 0,
         tension: 0.15,
         fill: false,
         order: 5,
-        // 凡例・tooltip非表示にしたいので、後でフィルタ
         _isMC: true,
       });
     });

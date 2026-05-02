@@ -390,6 +390,7 @@
         <div class="legend-item"><div class="legend-dot" style="background:#2b6cb0;height:3px"></div>保険（確実）</div>
         <div class="legend-item"><div class="legend-dot" style="background:#38a169"></div>NISA 中央値</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(56,161,105,0.25);width:20px;height:10px;border-radius:3px"></div>NISAのブレ幅</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(113,128,150,0.55);height:2px;border-top:1px dashed #718096"></div>元本ライン</div>
       </div>
       <canvas id="chart" height="240"></canvas>
     </div>
@@ -563,7 +564,21 @@ function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths)
     insData.push(Math.round(total * Math.pow(1 + insRate, y)));
   }
 
+  // 元本（水平線）
+  const principalLine = labels.map(() => total);
+
   let datasets = [
+    {
+      label: `元本（${fmt(total)} 万円）`,
+      data: principalLine,
+      borderColor: 'rgba(113,128,150,0.55)',
+      borderWidth: 1.2,
+      borderDash: [2, 4],
+      pointRadius: 0,
+      tension: 0,
+      fill: false,
+      order: 6,
+    },
     {
       label: '保険（確実）',
       data: insData,

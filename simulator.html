@@ -392,7 +392,8 @@
         <div class="legend-item"><div class="legend-dot" style="background:#2b6cb0;height:3px"></div>保険（確実）</div>
         <div class="legend-item"><div class="legend-dot" style="background:#38a169"></div>NISA 中央値</div>
         <div class="legend-item"><div class="legend-dot" style="background:rgba(56,161,105,0.25);width:20px;height:10px;border-radius:3px"></div>NISAのブレ幅</div>
-        <div class="legend-item"><div class="legend-dot" style="background:rgba(113,128,150,0.55);height:2px;border-top:1px dashed #718096"></div>元本ライン</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(43,108,176,0.45);height:2px;border-top:1px dashed #2b6cb0"></div>保険・元本</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(113,128,150,0.55);height:2px;border-top:1px dashed #718096"></div>NISA・積立累計</div>
       </div>
       <canvas id="chart" height="240"></canvas>
     </div>
@@ -570,13 +571,27 @@ function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths)
     insData.push(Math.round(total * Math.pow(1 + insRate, y)));
   }
 
-  // 元本（水平線）
-  const principalLine = labels.map(() => total);
+  // 元本ライン
+  // - 一時払い保険：契約時にtotal一括 → 水平線（=total）
+  // - NISA積立：その時点までの積立累計（=total×y/years） → 右上がり斜線
+  const insPrincipalLine  = labels.map(() => total);
+  const nisaPrincipalLine = labels.map((_, y) => Math.round(total * y / years));
 
   let datasets = [
     {
-      label: `元本（${fmt(total)} 万円）`,
-      data: principalLine,
+      label: `保険・元本（${fmt(total)} 万円）`,
+      data: insPrincipalLine,
+      borderColor: 'rgba(43,108,176,0.45)',
+      borderWidth: 1.2,
+      borderDash: [2, 4],
+      pointRadius: 0,
+      tension: 0,
+      fill: false,
+      order: 6,
+    },
+    {
+      label: 'NISA・積立累計',
+      data: nisaPrincipalLine,
       borderColor: 'rgba(113,128,150,0.55)',
       borderWidth: 1.2,
       borderDash: [2, 4],
@@ -707,13 +722,16 @@ function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths)
               const yIdx = items[0].dataIndex;
               if (yIdx === 0) return '';
               const N = mcPaths.length;
+              // 積立累計（その時点までに払い込んだ元本）と比較
+              const cumPrincipal = total * yIdx / years;
               let below = 0;
               for (let i = 0; i < N; i++) {
-                if (mcPaths[i][yIdx] < total) below++;
+                if (mcPaths[i][yIdx] < cumPrincipal) below++;
               }
               const pct = ((below / N) * 100).toFixed(1);
               return [
                 '',
+                `積立累計：${fmt(cumPrincipal)} 万円`,
                 `元本割れ：${below} / ${N} 本（${pct}%）`
               ];
             }

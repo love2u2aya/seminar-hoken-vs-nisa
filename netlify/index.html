@@ -207,6 +207,45 @@
     margin-top: 14px; transition: background 0.15s;
   }
   .reset-btn:hover { background: #f7fafc; }
+
+  /* モンテカルロ切替 */
+  .mc-toggle {
+    display: flex; align-items: center; gap: 12px;
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px dashed #cbd5e0;
+  }
+  .mc-label { flex: 1; }
+  .mc-label strong { display: block; font-size: 0.82rem; color: #2d3748; }
+  .mc-desc { font-size: 0.7rem; color: #718096; }
+
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-sw {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #cbd5e0; border-radius: 24px; transition: 0.2s;
+  }
+  .slider-sw:before {
+    content: ""; position: absolute;
+    height: 18px; width: 18px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider-sw { background: #276749; }
+  .switch input:checked + .slider-sw:before { transform: translateX(20px); }
+
+  .mc-options {
+    margin-top: 12px; padding: 12px;
+    background: #f0fff4; border-radius: 10px;
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  .mc-options .field { flex: 1; }
+  .reshuffle-btn {
+    padding: 9px 14px;
+    background: #276749; color: white;
+    border: none; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer;
+    white-space: nowrap;
+  }
+  .reshuffle-btn:hover { opacity: 0.9; }
 </style>
 </head>
 <body>
@@ -282,6 +321,28 @@
         オルカン（全世界株式）の標準偏差は歴史的に約15%。<br>
         <span class="hi">楽観シナリオ</span>：利率＋ブレ幅　／　<span class="lo">悲観シナリオ</span>：利率－ブレ幅
       </div>
+
+      <!-- モンテカルロ切替 -->
+      <div class="mc-toggle">
+        <label class="switch">
+          <input type="checkbox" id="mc-enabled" onchange="toggleMC()">
+          <span class="slider-sw"></span>
+        </label>
+        <div class="mc-label">
+          <strong>モンテカルロ表示</strong>
+          <span class="mc-desc">±σ帯ではなく、ランダムに動いた複数パスで表示</span>
+        </div>
+      </div>
+      <div class="mc-options" id="mc-options" style="display:none;">
+        <div class="field" style="margin:0;">
+          <label>シミュレーション本数</label>
+          <div class="input-wrap">
+            <input type="number" id="mc-paths" value="30" min="3" max="200" step="1">
+            <span class="unit">本</span>
+          </div>
+        </div>
+        <button type="button" class="reshuffle-btn" onclick="calculate()">🎲 再シャッフル</button>
+      </div>
     </div>
   </div>
 
@@ -324,7 +385,7 @@
 
     <div class="chart-card">
       <h3>年ごとの資産推移</h3>
-      <div class="chart-sub">NISAの緑の帯＝ブレの範囲（±1σシナリオ）</div>
+      <div class="chart-sub" id="chart-sub">NISAの緑の帯＝ブレの範囲（±1σシナリオ）</div>
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:#2b6cb0;height:3px"></div>保険（確実）</div>
         <div class="legend-item"><div class="legend-dot" style="background:#38a169"></div>NISA 中央値</div>
@@ -384,6 +445,40 @@ function nisaDCA(monthlyAmt, annualRate, years) {
   return monthlyAmt * (Math.pow(1 + mr, months) - 1) / mr;
 }
 
+// 標準正規分布の乱数（Box-Muller）
+function gaussRand() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+// 1本のランダムパス：年ごとの資産推移配列を返す（length = years+1）
+// 各月、月次リターン m = (annualRate + sigma * Z_year) / 12 を適用
+function nisaRandomPath(monthly, annualRate, sigma, years) {
+  const arr = [0];
+  let bal = 0;
+  for (let y = 1; y <= years; y++) {
+    const z = gaussRand();
+    const annR = annualRate + sigma * z;     // この年の年率（ブレあり）
+    const mr = annR / 12;
+    for (let m = 0; m < 12; m++) {
+      bal = bal * (1 + mr) + monthly;
+    }
+    arr.push(bal);
+  }
+  return arr;
+}
+
+function toggleMC() {
+  const on = document.getElementById('mc-enabled').checked;
+  document.getElementById('mc-options').style.display = on ? 'flex' : 'none';
+  // 既に結果が出ていれば再描画
+  if (document.getElementById('results').classList.contains('show')) {
+    calculate();
+  }
+}
+
 function calculate() {
   const total      = parseFloat(document.getElementById('total').value) || 0;
   const insRate    = parseFloat(document.getElementById('ins-rate').value) / 100 || 0;
@@ -398,14 +493,29 @@ function calculate() {
   const insFV   = total * Math.pow(1 + insRate, years);
   const insGain = insFV - total;
 
-  // NISA 3シナリオ
-  const rateHi  = nisaRate + nisaSigma;
-  const rateMid = nisaRate;
-  const rateLo  = nisaRate - nisaSigma;
+  const mcOn = document.getElementById('mc-enabled').checked;
 
-  const nisaHi  = nisaDCA(monthly, rateHi,  years);
-  const nisaMid = nisaDCA(monthly, rateMid, years);
-  const nisaLo  = nisaDCA(monthly, rateLo,  years);
+  let nisaHi, nisaMid, nisaLo;
+  let mcPaths = null;
+
+  if (mcOn) {
+    // モンテカルロ：N本の最終値からパーセンタイルを取る
+    const N = Math.max(3, Math.min(200, parseInt(document.getElementById('mc-paths').value) || 30));
+    mcPaths = [];
+    for (let i = 0; i < N; i++) {
+      mcPaths.push(nisaRandomPath(monthly, nisaRate, nisaSigma, years));
+    }
+    const finals = mcPaths.map(p => p[p.length - 1]).slice().sort((a, b) => a - b);
+    const pct = q => finals[Math.min(finals.length - 1, Math.max(0, Math.floor(q * (finals.length - 1))))];
+    nisaHi  = pct(0.90);  // 上位10%
+    nisaMid = pct(0.50);
+    nisaLo  = pct(0.10);  // 下位10%
+  } else {
+    // 従来：±σ簡易シナリオ
+    nisaHi  = nisaDCA(monthly, nisaRate + nisaSigma, years);
+    nisaMid = nisaDCA(monthly, nisaRate,             years);
+    nisaLo  = nisaDCA(monthly, nisaRate - nisaSigma, years);
+  }
 
   // サマリー表示
   document.getElementById('ins-result').textContent   = fmt(insFV);
@@ -416,7 +526,26 @@ function calculate() {
   document.getElementById('nisa-lo-result').textContent   = `${fmt(nisaLo)} 万円`;
   document.getElementById('nisa-principal-result').textContent = `${fmt(nisaPrincipal)} 万円`;
 
-  drawChart(total, insRate, monthly, nisaRate, nisaSigma, years);
+  // ラベル切替（モンテカルロのときは上位/下位10%表示）
+  document.querySelectorAll('.nisa-range .range-row').forEach((row, i) => {
+    const lbl = row.querySelector('.rlbl');
+    if (!lbl) return;
+    if (mcOn) {
+      if (i === 0) lbl.textContent = '上位10%（楽観）';
+      if (i === 1) lbl.textContent = '中央値';
+      if (i === 2) lbl.textContent = '下位10%（悲観）';
+    } else {
+      if (i === 0) lbl.textContent = '楽観シナリオ';
+      if (i === 1) lbl.textContent = '中央値';
+      if (i === 2) lbl.textContent = '悲観シナリオ';
+    }
+  });
+
+  document.getElementById('chart-sub').textContent = mcOn
+    ? `モンテカルロ：${mcPaths.length}本のランダムパス（毎年の年率は正規分布から抽選）`
+    : 'NISAの緑の帯＝ブレの範囲（±1σシナリオ）';
+
+  drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths);
 
   document.getElementById('results').classList.add('show');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -426,90 +555,116 @@ function fmt(v) {
   return Math.round(v).toLocaleString('ja-JP');
 }
 
-function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years) {
-  const labels   = [];
-  const insData  = [];
-  const nisaHiD  = [];
-  const nisaMidD = [];
-  const nisaLoD  = [];
-
-  const rateHi  = nisaRate + nisaSigma;
-  const rateMid = nisaRate;
-  const rateLo  = nisaRate - nisaSigma;
-
+function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths) {
+  const labels  = [];
+  const insData = [];
   for (let y = 0; y <= years; y++) {
     labels.push(`${y}年`);
     insData.push(Math.round(total * Math.pow(1 + insRate, y)));
-    nisaHiD.push(Math.round(nisaDCA(monthly, rateHi,  y)));
-    nisaMidD.push(Math.round(nisaDCA(monthly, rateMid, y)));
-    nisaLoD.push(Math.round(nisaDCA(monthly, rateLo,  y)));
+  }
+
+  let datasets = [
+    {
+      label: '保険（確実）',
+      data: insData,
+      borderColor: '#2b6cb0',
+      backgroundColor: 'rgba(43,108,176,0.07)',
+      borderWidth: 3,
+      pointRadius: 2,
+      tension: 0.3,
+      fill: false,
+      order: 1,
+    },
+  ];
+
+  if (mcPaths) {
+    // モンテカルロ：N本のパスを薄い線で、中央値を太く描く
+    const N = mcPaths.length;
+    // 各年のパーセンタイル
+    const median = [];
+    for (let y = 0; y <= years; y++) {
+      const vals = mcPaths.map(p => p[y]).slice().sort((a, b) => a - b);
+      median.push(Math.round(vals[Math.floor(vals.length / 2)]));
+    }
+    // 個別パス
+    mcPaths.forEach((p, i) => {
+      datasets.push({
+        label: `パス${i + 1}`,
+        data: p.map(v => Math.round(v)),
+        borderColor: 'rgba(56,161,105,0.18)',
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.15,
+        fill: false,
+        order: 5,
+        // 凡例・tooltip非表示にしたいので、後でフィルタ
+        _isMC: true,
+      });
+    });
+    // 中央値（強調）
+    datasets.push({
+      label: 'NISA 中央値',
+      data: median,
+      borderColor: '#276749',
+      borderWidth: 3,
+      pointRadius: 2,
+      tension: 0.2,
+      fill: false,
+      order: 2,
+    });
+  } else {
+    // 従来：±σ帯
+    const rateHi  = nisaRate + nisaSigma;
+    const rateMid = nisaRate;
+    const rateLo  = nisaRate - nisaSigma;
+    const nisaHiD = [], nisaMidD = [], nisaLoD = [];
+    for (let y = 0; y <= years; y++) {
+      nisaHiD.push(Math.round(nisaDCA(monthly, rateHi,  y)));
+      nisaMidD.push(Math.round(nisaDCA(monthly, rateMid, y)));
+      nisaLoD.push(Math.round(nisaDCA(monthly, rateLo,  y)));
+    }
+    datasets.push(
+      {
+        label: 'NISA 楽観',
+        data: nisaHiD,
+        borderColor: 'rgba(56,161,105,0.5)',
+        borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0,
+        tension: 0.3, fill: '+1',
+        backgroundColor: 'rgba(56,161,105,0.13)',
+        order: 3,
+      },
+      {
+        label: 'NISA 悲観',
+        data: nisaLoD,
+        borderColor: 'rgba(197,48,48,0.45)',
+        borderWidth: 1.5, borderDash: [4, 4], pointRadius: 0,
+        tension: 0.3, fill: false,
+        order: 4,
+      },
+      {
+        label: 'NISA 中央値',
+        data: nisaMidD,
+        borderColor: '#38a169',
+        borderWidth: 2.5, pointRadius: 2,
+        tension: 0.3, fill: false,
+        order: 2,
+      }
+    );
   }
 
   if (chartInstance) chartInstance.destroy();
-
   const ctx = document.getElementById('chart').getContext('2d');
 
   chartInstance = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        // 保険
-        {
-          label: '保険（確実）',
-          data: insData,
-          borderColor: '#2b6cb0',
-          backgroundColor: 'rgba(43,108,176,0.07)',
-          borderWidth: 3,
-          pointRadius: 2,
-          tension: 0.3,
-          fill: false,
-          order: 1,
-        },
-        // NISA 楽観（バンド上端）
-        {
-          label: 'NISA 楽観',
-          data: nisaHiD,
-          borderColor: 'rgba(56,161,105,0.5)',
-          borderWidth: 1.5,
-          borderDash: [4, 4],
-          pointRadius: 0,
-          tension: 0.3,
-          fill: '+1',
-          backgroundColor: 'rgba(56,161,105,0.13)',
-          order: 3,
-        },
-        // NISA 悲観（バンド下端）
-        {
-          label: 'NISA 悲観',
-          data: nisaLoD,
-          borderColor: 'rgba(197,48,48,0.45)',
-          borderWidth: 1.5,
-          borderDash: [4, 4],
-          pointRadius: 0,
-          tension: 0.3,
-          fill: false,
-          order: 4,
-        },
-        // NISA 中央値
-        {
-          label: 'NISA 中央値',
-          data: nisaMidD,
-          borderColor: '#38a169',
-          borderWidth: 2.5,
-          pointRadius: 2,
-          tension: 0.3,
-          fill: false,
-          order: 2,
-        },
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
+          filter: c => !c.dataset._isMC,
           callbacks: {
             label: c => {
               const map = {

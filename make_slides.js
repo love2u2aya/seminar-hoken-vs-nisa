@@ -26,6 +26,29 @@ const F  = 'Meiryo';
 const FA = 'Arial';
 const mkSh = () => ({ type: 'outer', blur: 6, offset: 2, angle: 135, color: '000000', opacity: 0.10 });
 
+// ── 助詞（てにをは）を4pt小さくするテキストラン生成 ──
+// pptxgenjs の「runs配列」を使って助詞だけフォントサイズを下げる
+// 例: jpRuns('保険とNISAの違い', 48) → '保険' 48pt, 'と' 44pt, 'NISA' 48pt, 'の' 44pt, '違い' 48pt
+function jpRuns(text, baseSize) {
+  const pSize = baseSize - 4;
+  // 複合助詞を先に、単独助詞を後に（順序重要）
+  const pRe = /(より|から|まで|として|では|には|とは|など|けど|ので|のに|だが|しか|は|が|を|に|で|と|も|へ|や|の)/g;
+  const result = [];
+  text.split('\n').forEach((line, li) => {
+    if (li > 0) result.push({ text: '', options: { breakLine: true } });
+    let last = 0;
+    pRe.lastIndex = 0;
+    let m;
+    while ((m = pRe.exec(line)) !== null) {
+      if (m.index > last) result.push({ text: line.slice(last, m.index), options: { fontSize: baseSize } });
+      result.push({ text: m[0], options: { fontSize: pSize } });
+      last = m.index + m[0].length;
+    }
+    if (last < line.length) result.push({ text: line.slice(last), options: { fontSize: baseSize } });
+  });
+  return result;
+}
+
 // ── ヘルパー ──
 function darkBg(s) { s.background = { color: C.darkNavy }; }
 function lightBg(s) { s.background = { color: C.white }; }
@@ -36,9 +59,9 @@ function sectionTitle(s, title) {
     x: 0, y: 0, w: 10, h: 0.52,
     fill: { color: C.blue }, line: { color: C.blue }
   });
-  s.addText(title, {
+  s.addText(jpRuns(title, 28), {
     x: 0.3, y: 0, w: 9.4, h: 0.52,
-    fontSize: 21, fontFace: F, bold: true, color: C.white, margin: 0, valign: 'middle'
+    fontFace: F, bold: true, color: C.white, margin: 0, valign: 'middle'
   });
 }
 
@@ -69,8 +92,8 @@ function card(s, x, y, w, h, bg) {
 // 赤い強調ボックス（参照ファイルの #C00000 パターン）
 function redBox(s, x, y, w, h, text, fontSize) {
   s.addShape(pres.shapes.RECTANGLE, { x, y, w, h, fill: { color: C.red }, line: { color: C.red } });
-  s.addText(text, {
-    x, y, w, h, fontSize: fontSize || 22, fontFace: F, bold: true,
+  s.addText(jpRuns(text, fontSize || 32), {
+    x, y, w, h, fontFace: F, bold: true,
     color: C.white, align: 'center', valign: 'middle', margin: 0
   });
 }
@@ -82,7 +105,7 @@ function caseTag(s, label, color) {
   });
   s.addText(label, {
     x: 0.45, y: 1.36, w: 1.6, h: 0.51,
-    fontSize: 13, fontFace: F, bold: true, color: C.white,
+    fontSize: 28, fontFace: FA, bold: true, color: C.white,
     align: 'center', valign: 'middle', margin: 0
   });
 }
@@ -90,13 +113,13 @@ function caseTag(s, label, color) {
 function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   card(s, 0.4, 1.3, 4.4, 5.2, C.blueCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: 1.3, w: 4.4, h: 0.60, fill: { color: C.blue }, line: { color: C.blue } });
-  s.addText(leftTitle, { x: 0.4, y: 1.3, w: 4.4, h: 0.60, fontSize: 14, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText(leftItems, { x: 0.55, y: 2.0, w: 4.1, h: 4.3, fontSize: 14, fontFace: F, color: C.bodyText, valign: 'top', lineSpacingMultiple: 1.5 });
+  s.addText(jpRuns(leftTitle, 28), { x: 0.4, y: 1.3, w: 4.4, h: 0.60, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText(jpRuns(leftItems, 28), { x: 0.55, y: 2.0, w: 4.1, h: 4.3, fontFace: F, color: C.bodyText, valign: 'top', lineSpacingMultiple: 1.5 });
 
   card(s, 5.2, 1.3, 4.4, 5.2, C.greenCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 5.2, y: 1.3, w: 4.4, h: 0.60, fill: { color: C.red }, line: { color: C.red } });
-  s.addText(rightTitle, { x: 5.2, y: 1.3, w: 4.4, h: 0.60, fontSize: 14, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText(rightItems, { x: 5.35, y: 2.0, w: 4.1, h: 4.3, fontSize: 14, fontFace: F, color: C.bodyText, valign: 'top', lineSpacingMultiple: 1.5 });
+  s.addText(jpRuns(rightTitle, 28), { x: 5.2, y: 1.3, w: 4.4, h: 0.60, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText(jpRuns(rightItems, 28), { x: 5.35, y: 2.0, w: 4.1, h: 4.3, fontFace: F, color: C.bodyText, valign: 'top', lineSpacingMultiple: 1.5 });
 }
 
 // ── SLIDE 1: タイトル ──────────────────────────────────────────
@@ -105,22 +128,22 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   darkBg(s);
   topBar(s, C.orange);
 
-  s.addText('一時払い保険とNISAの賢い使い分け', {
+  s.addText(jpRuns('一時払い保険とNISAの賢い使い分け', 48), {
     x: 0.6, y: 1.33, w: 8.8, h: 2.13,
-    fontSize: 40, fontFace: F, bold: true, color: C.white,
+    fontFace: F, bold: true, color: C.white,
     align: 'center', valign: 'middle'
   });
-  s.addText('同じ金額・同じ10年。何が違う？', {
+  s.addText(jpRuns('同じ金額・同じ10年。何が違う？', 44), {
     x: 0.6, y: 3.67, w: 8.8, h: 0.87,
-    fontSize: 22, fontFace: F, color: C.orangeLight,
+    fontFace: F, color: C.orangeLight,
     align: 'center'
   });
   s.addShape(pres.shapes.LINE, { x: 2.8, y: 4.73, w: 4.4, h: 0, line: { color: C.blueLight, width: 1 } });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 2.4, y: 4.93, w: 2.4, h: 0.60, fill: { color: C.blueMid }, line: { color: C.blueLight, width: 1 } });
-  s.addText('講師名', { x: 2.4, y: 4.93, w: 2.4, h: 0.60, fontSize: 13, fontFace: F, color: 'AABBCC', align: 'center', valign: 'middle', margin: 0 });
+  s.addText('講師名', { x: 2.4, y: 4.93, w: 2.4, h: 0.60, fontSize: 28, fontFace: F, color: 'AABBCC', align: 'center', valign: 'middle', margin: 0 });
   s.addShape(pres.shapes.RECTANGLE, { x: 5.2, y: 4.93, w: 2.4, h: 0.60, fill: { color: C.blueMid }, line: { color: C.blueLight, width: 1 } });
-  s.addText('日付', { x: 5.2, y: 4.93, w: 2.4, h: 0.60, fontSize: 13, fontFace: F, color: 'AABBCC', align: 'center', valign: 'middle', margin: 0 });
+  s.addText('日付', { x: 5.2, y: 4.93, w: 2.4, h: 0.60, fontSize: 28, fontFace: F, color: 'AABBCC', align: 'center', valign: 'middle', margin: 0 });
 
   bottomBar(s, C.red);
 }
@@ -140,8 +163,8 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
     const y = 1.67 + i * 1.60;
     card(s, 0.5, y, 9.0, 1.27, C.white);
     s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y, w: 0.87, h: 1.27, fill: { color: C.blue }, line: { color: C.blue } });
-    s.addText(item.num, { x: 0.5, y, w: 0.87, h: 1.27, fontSize: 18, fontFace: F, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(item.text, { x: 1.55, y: y + 0.07, w: 7.8, h: 1.13, fontSize: 19, fontFace: F, bold: true, color: C.bodyText, valign: 'middle' });
+    s.addText(item.num, { x: 0.5, y, w: 0.87, h: 1.27, fontSize: 28, fontFace: F, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(item.text, { x: 1.55, y: y + 0.07, w: 7.8, h: 1.13, fontSize: 32, fontFace: F, bold: true, color: C.bodyText, valign: 'middle' });
   });
 }
 
@@ -153,17 +176,17 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   card(s, 0.5, 1.53, 9.0, 1.80, C.blueCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 1.53, w: 0.20, h: 1.80, fill: { color: C.blue }, line: { color: C.blue } });
-  s.addText('「子どもの学費が最優先…でも老後もそろそろ心配。\nどうすればいいの？」', {
+  s.addText(jpRuns('「子どもの学費が最優先…でも老後もそろそろ心配。\nどうすればいいの？」', 32), {
     x: 0.87, y: 1.60, w: 8.4, h: 1.67,
-    fontSize: 20, fontFace: F, bold: true, color: C.blue,
+ fontFace: F, bold: true, color: C.blue,
     valign: 'middle', lineSpacingMultiple: 1.5
   });
 
   card(s, 0.5, 3.60, 9.0, 1.33, C.greenCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 3.60, w: 0.20, h: 1.33, fill: { color: C.blueMid }, line: { color: C.blueMid } });
-  s.addText('「NISAって今から間に合うの？　損したら怖い…」', {
+  s.addText(jpRuns('「NISAって今から間に合うの？　損したら怖い…」', 32), {
     x: 0.87, y: 3.67, w: 8.4, h: 1.20,
-    fontSize: 20, fontFace: F, bold: true, color: C.blueMid,
+ fontFace: F, bold: true, color: C.blueMid,
     valign: 'middle'
   });
 
@@ -187,7 +210,7 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   ];
   points.forEach(p => {
     s.addShape(pres.shapes.OVAL, { x: p.x - 0.19, y: tl_y + 0.05, w: 0.50, h: 0.50, fill: { color: p.color }, line: { color: p.color } });
-    s.addText(p.label, { x: p.x - 0.6, y: tl_y + 0.70, w: 1.2, h: 0.93, fontSize: 12, fontFace: F, color: C.bodyText, align: 'center' });
+    s.addText(p.label, { x: p.x - 0.6, y: tl_y + 0.70, w: 1.2, h: 0.93, fontSize: 28, fontFace: F, color: C.bodyText, align: 'center' });
   });
   s.addShape(pres.shapes.RECTANGLE, { x: tl_x, y: tl_y + 0.28, w: tl_w * 0.75, h: 0, fill: { color: C.blue }, line: { color: C.blue, width: 3 } });
 
@@ -195,7 +218,7 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   s.addShape(pres.shapes.RECTANGLE, { x: 1.0, y: 4.80, w: 0.20, h: 1.13, fill: { color: C.orange }, line: { color: C.orange } });
   s.addText('「時間がない」のではなく「時間の使い方を変える」タイミング', {
     x: 1.35, y: 4.87, w: 7.5, h: 1.00,
-    fontSize: 16, fontFace: F, bold: true, color: C.bodyText, valign: 'middle'
+    fontSize: 28, fontFace: F, bold: true, color: C.bodyText, valign: 'middle'
   });
 }
 
@@ -207,16 +230,16 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   card(s, 0.4, 1.47, 3.6, 4.67, C.blueCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: 1.47, w: 3.6, h: 0.67, fill: { color: C.blue }, line: { color: C.blue } });
-  s.addText('円高になったら？', { x: 0.4, y: 1.47, w: 3.6, h: 0.67, fontSize: 14, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText('円資産が有利\n日本円で持っていると\n購買力が上がる', { x: 0.55, y: 2.27, w: 3.3, h: 3.60, fontSize: 16, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.6 });
+  s.addText('円高になったら？', { x: 0.4, y: 1.47, w: 3.6, h: 0.67, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText('円資産が有利\n日本円で持っていると\n購買力が上がる', { x: 0.55, y: 2.27, w: 3.3, h: 3.60, fontSize: 28, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.6 });
 
   card(s, 5.95, 1.47, 3.6, 4.67, C.greenCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 5.95, y: 1.47, w: 3.6, h: 0.67, fill: { color: C.blueMid }, line: { color: C.blueMid } });
-  s.addText('円安になったら？', { x: 5.95, y: 1.47, w: 3.6, h: 0.67, fontSize: 14, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText('外貨資産が有利\n円建て資産の価値が\n目減りする', { x: 6.1, y: 2.27, w: 3.3, h: 3.60, fontSize: 16, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.6 });
+  s.addText('円安になったら？', { x: 5.95, y: 1.47, w: 3.6, h: 0.67, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText('外貨資産が有利\n円建て資産の価値が\n目減りする', { x: 6.1, y: 2.27, w: 3.3, h: 3.60, fontSize: 28, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.6 });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 4.1, y: 2.47, w: 1.75, h: 2.00, fill: { color: C.blue }, line: { color: C.blue } });
-  s.addText('だから\n「両方持つ」\n＝分散', { x: 4.1, y: 2.47, w: 1.75, h: 2.00, fontSize: 14, fontFace: F, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
+  s.addText('だから\n「両方持つ」\n＝分散', { x: 4.1, y: 2.47, w: 1.75, h: 2.00, fontSize: 28, fontFace: F, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
 }
 
 // ── SLIDE 6: ドル資産② ──────────────────────────────────────
@@ -234,10 +257,10 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   flow.forEach((f, i) => {
     const x = 0.4 + i * 2.38;
     card(s, x, 1.53, 2.1, 2.00, f.bg);
-    s.addText(f.label, { x, y: 1.53, w: 2.1, h: 2.00, fontSize: 14, fontFace: F, bold: true, color: f.tc, align: 'center', valign: 'middle', margin: 8 });
+    s.addText(f.label, { x, y: 1.53, w: 2.1, h: 2.00, fontSize: 28, fontFace: F, bold: true, color: f.tc, align: 'center', valign: 'middle', margin: 8 });
     if (i < 3) {
       s.addShape(pres.shapes.RECTANGLE, { x: x + 2.1, y: 2.20, w: 0.28, h: 0.52, fill: { color: C.orange }, line: { color: C.orange } });
-      s.addText('▶', { x: x + 2.1, y: 2.20, w: 0.28, h: 0.52, fontSize: 14, fontFace: F, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+      s.addText('▶', { x: x + 2.1, y: 2.20, w: 0.28, h: 0.52, fontSize: 28, fontFace: F, color: C.white, align: 'center', valign: 'middle', margin: 0 });
     }
   });
 
@@ -245,7 +268,7 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: 4.13, w: 0.14, h: 1.87, fill: { color: C.orange }, line: { color: C.orange } });
   s.addText('だからこそ、資産の一部を外貨で持つことが「生活の守り」になる\n\n今日紹介する一時払い保険もNISA（オルカン）も、どちらもドル建て・外貨資産として機能する', {
     x: 0.67, y: 4.20, w: 8.8, h: 1.73,
-    fontSize: 15, fontFace: F, color: C.white, valign: 'top', lineSpacingMultiple: 1.5
+    fontSize: 28, fontFace: F, color: C.white, valign: 'top', lineSpacingMultiple: 1.5
   });
 }
 
@@ -257,10 +280,10 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   card(s, 0.5, 1.47, 9.0, 1.60, C.blueCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 1.47, w: 1.5, h: 1.60, fill: { color: C.blue }, line: { color: C.blue } });
-  s.addText('NISA\n口座', { x: 0.5, y: 1.47, w: 1.5, h: 1.60, fontSize: 16, fontFace: F, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
-  s.addText('運用益に税金ゼロ　（通常は利益の約20%が税金）', {
+  s.addText('NISA\n口座', { x: 0.5, y: 1.47, w: 1.5, h: 1.60, fontSize: 28, fontFace: F, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
+  s.addText(jpRuns('運用益に税金ゼロ　（通常は利益の約20%が税金）', 32), {
     x: 2.2, y: 1.60, w: 7.1, h: 1.33,
-    fontSize: 19, fontFace: F, bold: true, color: C.blue, valign: 'middle'
+ fontFace: F, bold: true, color: C.blue, valign: 'middle'
   });
 
   const feats = [
@@ -272,8 +295,8 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
     const x = 0.5 + i * 3.05;
     card(s, x, 3.47, 2.8, 3.47, C.white);
     s.addShape(pres.shapes.RECTANGLE, { x, y: 3.47, w: 2.8, h: 0.73, fill: { color: C.blue }, line: { color: C.blue } });
-    s.addText(f.title, { x, y: 3.47, w: 2.8, h: 0.73, fontSize: 14, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(f.body, { x, y: 4.27, w: 2.8, h: 2.53, fontSize: 17, fontFace: F, color: C.bodyText, align: 'center', valign: 'middle' });
+    s.addText(f.title, { x, y: 3.47, w: 2.8, h: 0.73, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(f.body, { x, y: 4.27, w: 2.8, h: 2.53, fontSize: 28, fontFace: F, color: C.bodyText, align: 'center', valign: 'middle' });
   });
 }
 
@@ -292,8 +315,8 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
     const x = 0.45 + i * 3.05;
     card(s, x, 1.40, 2.85, 2.67, C.white);
     s.addShape(pres.shapes.RECTANGLE, { x, y: 1.40, w: 2.85, h: 0.60, fill: { color: st.color }, line: { color: st.color } });
-    s.addText(st.val, { x, y: 2.00, w: 2.85, h: 1.27, fontSize: 36, fontFace: F, bold: true, color: st.color, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(st.sub, { x, y: 3.33, w: 2.85, h: 0.73, fontSize: 13, fontFace: F, color: C.gray, align: 'center', valign: 'top' });
+    s.addText(st.val, { x, y: 2.00, w: 2.85, h: 1.27, fontSize: 44, fontFace: F, bold: true, color: st.color, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(st.sub, { x, y: 3.33, w: 2.85, h: 0.73, fontSize: 28, fontFace: F, color: C.gray, align: 'center', valign: 'top' });
   });
 
   const chartData = [
@@ -327,17 +350,17 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   flow2.forEach((f, i) => {
     const x = 0.6 + i * 3.15;
     card(s, x, 1.60, 2.8, 4.27, f.bg);
-    s.addText(f.label, { x, y: 1.60, w: 2.8, h: 4.27, fontSize: 18, fontFace: F, bold: true, color: f.tc, align: 'center', valign: 'middle', margin: 12 });
+    s.addText(f.label, { x, y: 1.60, w: 2.8, h: 4.27, fontSize: 28, fontFace: F, bold: true, color: f.tc, align: 'center', valign: 'middle', margin: 12 });
     if (i < 2) {
       s.addShape(pres.shapes.RECTANGLE, { x: x + 2.8, y: 3.33, w: 0.35, h: 0.73, fill: { color: C.orange }, line: { color: C.orange } });
-      s.addText('▶', { x: x + 2.8, y: 3.33, w: 0.35, h: 0.73, fontSize: 18, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+      s.addText('▶', { x: x + 2.8, y: 3.33, w: 0.35, h: 0.73, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
     }
   });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.6, y: 6.20, w: 8.85, h: 0.73, fill: { color: C.goldCard }, line: { color: C.orange, width: 1 } });
   s.addText('「保険」という名前がついているが、今日は「増やす手段」として考える', {
     x: 0.6, y: 6.20, w: 8.85, h: 0.73,
-    fontSize: 14, fontFace: F, bold: true, color: C.blue, align: 'center', valign: 'middle', margin: 0
+    fontSize: 28, fontFace: F, bold: true, color: C.blue, align: 'center', valign: 'middle', margin: 0
   });
 }
 
@@ -356,8 +379,8 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
     const x = 0.45 + i * 3.05;
     card(s, x, 1.40, 2.85, 2.67, C.white);
     s.addShape(pres.shapes.RECTANGLE, { x, y: 1.40, w: 2.85, h: 0.60, fill: { color: st.color }, line: { color: st.color } });
-    s.addText(st.val, { x, y: 2.00, w: 2.85, h: 1.27, fontSize: 36, fontFace: F, bold: true, color: st.color, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(st.sub, { x, y: 3.33, w: 2.85, h: 0.73, fontSize: 13, fontFace: F, color: C.gray, align: 'center', valign: 'top' });
+    s.addText(st.val, { x, y: 2.00, w: 2.85, h: 1.27, fontSize: 44, fontFace: F, bold: true, color: st.color, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(st.sub, { x, y: 3.33, w: 2.85, h: 0.73, fontSize: 28, fontFace: F, color: C.gray, align: 'center', valign: 'top' });
   });
 
   const insData = [{ name: '一時払い保険', labels: ['0', '2', '4', '6', '8', '10'], values: [500, 541, 584, 631, 682, 735] }];
@@ -381,20 +404,20 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   const headers = [
     [{ text: '', options: { fill: { color: C.offWhite } } },
-     { text: '一時払い保険', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 15 } },
-     { text: 'NISA（つみたて）', options: { fill: { color: C.blueMid }, color: C.white, bold: true, fontSize: 15 } }],
-    [{ text: '利回り', options: { fill: { color: C.blueCard }, bold: true, fontSize: 14, color: C.blue } },
-     { text: '約4%', options: { fontSize: 15, color: C.blue, bold: true } },
-     { text: '約8%', options: { fontSize: 15, color: C.blueMid, bold: true } }],
-    [{ text: '10年後', options: { fill: { color: C.blueCard }, bold: true, fontSize: 14, color: C.blue } },
-     { text: '約1.5倍（確実）', options: { fontSize: 14, color: C.blue, bold: true } },
-     { text: '約1.5倍（目安）', options: { fontSize: 14, color: C.blueMid } }],
-    [{ text: 'ブレ', options: { fill: { color: C.blueCard }, bold: true, fontSize: 14, color: C.blue } },
-     { text: 'なし', options: { fontSize: 15, color: C.blue, bold: true } },
-     { text: 'あり（大きく）', options: { fontSize: 15, color: C.red, bold: true } }],
-    [{ text: '流動性', options: { fill: { color: C.blueCard }, bold: true, fontSize: 14, color: C.blue } },
-     { text: '低い（途中解約は損）', options: { fontSize: 13, color: C.gray } },
-     { text: '高い（いつでも売れる）', options: { fontSize: 13, color: C.gray } }],
+     { text: '一時払い保険', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 28 } },
+     { text: 'NISA（つみたて）', options: { fill: { color: C.blueMid }, color: C.white, bold: true, fontSize: 28 } }],
+    [{ text: '利回り', options: { fill: { color: C.blueCard }, bold: true, fontSize: 28, color: C.blue } },
+     { text: '約4%', options: { fontSize: 28, color: C.blue, bold: true } },
+     { text: '約8%', options: { fontSize: 28, color: C.blueMid, bold: true } }],
+    [{ text: '10年後', options: { fill: { color: C.blueCard }, bold: true, fontSize: 28, color: C.blue } },
+     { text: '約1.5倍（確実）', options: { fontSize: 28, color: C.blue, bold: true } },
+     { text: '約1.5倍（目安）', options: { fontSize: 28, color: C.blueMid } }],
+    [{ text: 'ブレ', options: { fill: { color: C.blueCard }, bold: true, fontSize: 28, color: C.blue } },
+     { text: 'なし', options: { fontSize: 28, color: C.blue, bold: true } },
+     { text: 'あり（大きく）', options: { fontSize: 28, color: C.red, bold: true } }],
+    [{ text: '流動性', options: { fill: { color: C.blueCard }, bold: true, fontSize: 28, color: C.blue } },
+     { text: '低い（途中解約は損）', options: { fontSize: 28, color: C.gray } },
+     { text: '高い（いつでも売れる）', options: { fontSize: 28, color: C.gray } }],
   ];
   s.addTable(headers, {
     x: 0.5, y: 1.40, w: 9.0, h: 4.53,
@@ -412,15 +435,15 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   darkBg(s);
   topBar(s, C.orange);
 
-  s.addText('実際に動かしてみましょう', {
+  s.addText(jpRuns('実際に動かしてみましょう', 44), {
     x: 0.5, y: 1.07, w: 9, h: 1.20,
-    fontSize: 34, fontFace: F, bold: true, color: C.white, align: 'center'
+ fontFace: F, bold: true, color: C.white, align: 'center'
   });
 
   card(s, 1.0, 2.60, 8.0, 2.13, C.blueMid);
-  s.addText('500万円・10年\n保険 4%  vs  NISA 8%  で比べると…？', {
+  s.addText(jpRuns('500万円・10年\n保険 4%  vs  NISA 8%  で比べると…？', 44), {
     x: 1.0, y: 2.60, w: 8.0, h: 2.13,
-    fontSize: 22, fontFace: F, bold: true, color: C.orangeLight,
+ fontFace: F, bold: true, color: C.orangeLight,
     align: 'center', valign: 'middle', lineSpacingMultiple: 1.5
   });
 
@@ -436,21 +459,21 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   sectionTitle(s, '使い分けの判断は、この一問');
 
   card(s, 0.5, 1.47, 9.0, 1.60, C.blue);
-  s.addText('「そのお金、10年後に減っていたら困りますか？」', {
+  s.addText(jpRuns('「そのお金、10年後に減っていたら困りますか？」', 44), {
     x: 0.5, y: 1.47, w: 9.0, h: 1.60,
-    fontSize: 22, fontFace: F, bold: true, color: C.orangeLight,
+ fontFace: F, bold: true, color: C.orangeLight,
     align: 'center', valign: 'middle', margin: 0
   });
 
   card(s, 0.5, 3.47, 4.3, 3.60, C.blueCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 3.47, w: 4.3, h: 0.67, fill: { color: C.blue }, line: { color: C.blue } });
-  s.addText('YES（困る）', { x: 0.5, y: 3.47, w: 4.3, h: 0.67, fontSize: 15, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText('一時払い保険\nブレない 1.5倍', { x: 0.5, y: 4.20, w: 4.3, h: 2.67, fontSize: 20, fontFace: F, bold: true, color: C.blue, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5 });
+  s.addText('YES（困る）', { x: 0.5, y: 3.47, w: 4.3, h: 0.67, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText(jpRuns('一時払い保険\nブレない 1.5倍', 32), { x: 0.5, y: 4.20, w: 4.3, h: 2.67, fontFace: F, bold: true, color: C.blue, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5 });
 
   card(s, 5.2, 3.47, 4.3, 3.60, C.greenCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 5.2, y: 3.47, w: 4.3, h: 0.67, fill: { color: C.red }, line: { color: C.red } });
-  s.addText('NO（大丈夫）', { x: 5.2, y: 3.47, w: 4.3, h: 0.67, fontSize: 15, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText('NISA\nブレても待てる', { x: 5.2, y: 4.20, w: 4.3, h: 2.67, fontSize: 20, fontFace: F, bold: true, color: C.red, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5 });
+  s.addText('NO（大丈夫）', { x: 5.2, y: 3.47, w: 4.3, h: 0.67, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText(jpRuns('NISA\nブレても待てる', 32), { x: 5.2, y: 4.20, w: 4.3, h: 2.67, fontFace: F, bold: true, color: C.red, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5 });
 }
 
 // ── SLIDE 14: 一時払いの入り方 ──────────────────────────────────────
@@ -468,9 +491,9 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
     const y = 1.47 + i * 1.80;
     card(s, 0.5, y, 9.0, 1.60, C.white);
     s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y, w: 0.93, h: 1.60, fill: { color: C.blue }, line: { color: C.blue } });
-    s.addText(p.num, { x: 0.5, y, w: 0.93, h: 1.60, fontSize: 26, fontFace: FA, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(p.title, { x: 1.60, y: y + 0.07, w: 7.7, h: 0.53, fontSize: 16, fontFace: F, bold: true, color: C.blue, valign: 'middle' });
-    s.addText(p.body, { x: 1.60, y: y + 0.64, w: 7.7, h: 0.87, fontSize: 13, fontFace: F, color: C.gray, valign: 'top' });
+    s.addText(p.num, { x: 0.5, y, w: 0.93, h: 1.60, fontSize: 44, fontFace: FA, bold: true, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(p.title, { x: 1.60, y: y + 0.07, w: 7.7, h: 0.53, fontSize: 28, fontFace: F, bold: true, color: C.blue, valign: 'middle' });
+    s.addText(p.body, { x: 1.60, y: y + 0.64, w: 7.7, h: 0.87, fontSize: 28, fontFace: F, color: C.gray, valign: 'top' });
   });
 }
 
@@ -482,14 +505,14 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   const tableRows = [
     [{ text: '', options: { fill: { color: C.offWhite } } },
-     { text: '10年後', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 14 } },
-     { text: '20年後', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 14 } }],
-    [{ text: '一時払い保険（4%）', options: { fill: { color: C.blueCard }, bold: true, fontSize: 13, color: C.blue } },
-     { text: '約750万円\n＋250万円増', options: { fontSize: 18, bold: true, color: C.blue } },
-     { text: '約1,095万円\n＋595万円増', options: { fontSize: 18, bold: true, color: C.blue } }],
-    [{ text: 'NISA 中央値（8%）', options: { fill: { color: C.greenCard }, bold: true, fontSize: 13, color: C.blueMid } },
-     { text: '約750万円\n（元本360万円）', options: { fontSize: 18, bold: true, color: C.blueMid } },
-     { text: '約1,764万円\n（元本720万円）', options: { fontSize: 18, bold: true, color: C.blueMid } }],
+     { text: '10年後', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 28 } },
+     { text: '20年後', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 28 } }],
+    [{ text: '一時払い保険（4%）', options: { fill: { color: C.blueCard }, bold: true, fontSize: 28, color: C.blue } },
+     { text: '約750万円\n＋250万円増', options: { fontSize: 28, bold: true, color: C.blue } },
+     { text: '約1,095万円\n＋595万円増', options: { fontSize: 28, bold: true, color: C.blue } }],
+    [{ text: 'NISA 中央値（8%）', options: { fill: { color: C.greenCard }, bold: true, fontSize: 28, color: C.blueMid } },
+     { text: '約750万円\n（元本360万円）', options: { fontSize: 28, bold: true, color: C.blueMid } },
+     { text: '約1,764万円\n（元本720万円）', options: { fontSize: 28, bold: true, color: C.blueMid } }],
   ];
   s.addTable(tableRows, {
     x: 0.5, y: 1.47, w: 9.0, h: 4.53,
@@ -500,7 +523,7 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   s.addText('※ NISAは積立総額＝保険元本と同額の条件で試算　／　NISAの実際の成果は大きくブレます', {
     x: 0.5, y: 6.27, w: 9.0, h: 0.67,
-    fontSize: 11, fontFace: F, color: C.gray, align: 'center'
+    fontSize: 28, fontFace: F, color: C.gray, align: 'center'
   });
 }
 
@@ -515,7 +538,7 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 2.07, w: 0.20, h: 2.20, fill: { color: C.blue }, line: { color: C.blue } });
   s.addText('状況：学費の総額がほぼ見えてきた\n残り期間は1〜4年。ゴールが近い。', {
     x: 0.87, y: 2.13, w: 8.4, h: 2.07,
-    fontSize: 18, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.5
+    fontSize: 28, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.5
   });
 
   redBox(s, 0.5, 4.60, 9.0, 0.73, '問：学費を払い終えた後、いくら残る？　それをどう老後に活かす？', 15);
@@ -547,13 +570,13 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 2.07, w: 0.20, h: 2.20, fill: { color: C.blueMid }, line: { color: C.blueMid } });
   s.addText('状況：進路がまだ読めない。でも時間はある（5〜10年）\n文系か理系か、どの大学か、まだわからない。', {
     x: 0.87, y: 2.13, w: 8.4, h: 2.07,
-    fontSize: 18, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.5
+    fontSize: 28, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.5
   });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 4.60, w: 9.0, h: 0.73, fill: { color: C.blueMid }, line: { color: C.blueMid } });
   s.addText('この期間をどう使うかが、老後を左右する', {
     x: 0.5, y: 4.60, w: 9.0, h: 0.73,
-    fontSize: 17, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0
+    fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0
   });
 }
 
@@ -569,8 +592,8 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   ];
   nums.forEach((n, i) => {
     card(s, 0.5 + i * 4.6, 1.40, 4.2, 2.00, C.blueCard);
-    s.addText(n.val, { x: 0.5 + i * 4.6, y: 1.40, w: 4.2, h: 1.20, fontSize: 34, fontFace: FA, bold: true, color: C.blue, align: 'center', valign: 'middle' });
-    s.addText(n.sub, { x: 0.5 + i * 4.6, y: 2.60, w: 4.2, h: 0.80, fontSize: 13, fontFace: F, color: C.gray, align: 'center' });
+    s.addText(n.val, { x: 0.5 + i * 4.6, y: 1.40, w: 4.2, h: 1.20, fontSize: 44, fontFace: FA, bold: true, color: C.blue, align: 'center', valign: 'middle' });
+    s.addText(n.sub, { x: 0.5 + i * 4.6, y: 2.60, w: 4.2, h: 0.80, fontSize: 28, fontFace: F, color: C.gray, align: 'center' });
   });
 
   const fl = [
@@ -581,16 +604,16 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   fl.forEach((f, i) => {
     const x = 0.5 + i * 3.08;
     card(s, x, 3.67, 2.75, 2.67, f.bg);
-    s.addText(f.label, { x, y: 3.67, w: 2.75, h: 2.67, fontSize: 14, fontFace: F, bold: true, color: f.tc, align: 'center', valign: 'middle', margin: 8 });
+    s.addText(f.label, { x, y: 3.67, w: 2.75, h: 2.67, fontSize: 28, fontFace: F, bold: true, color: f.tc, align: 'center', valign: 'middle', margin: 8 });
     if (i < 2) {
       s.addShape(pres.shapes.RECTANGLE, { x: x + 2.75, y: 4.67, w: 0.33, h: 0.64, fill: { color: C.grayLight }, line: { color: C.grayLight } });
-      s.addText('▶', { x: x + 2.75, y: 4.67, w: 0.33, h: 0.64, fontSize: 14, fontFace: F, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+      s.addText('▶', { x: x + 2.75, y: 4.67, w: 0.33, h: 0.64, fontSize: 28, fontFace: F, color: C.white, align: 'center', valign: 'middle', margin: 0 });
     }
   });
 
   s.addText('子どもにNISAを覚えさせ、奨学金返済資金として積み立てる', {
     x: 0.5, y: 6.56, w: 9.0, h: 0.60,
-    fontSize: 14, fontFace: F, bold: true, color: C.blueMid, align: 'center'
+    fontSize: 28, fontFace: F, bold: true, color: C.blueMid, align: 'center'
   });
 }
 
@@ -615,9 +638,9 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   darkBg(s);
   topBar(s, C.orange);
 
-  s.addText('あなたのケースで動かしてみましょう', {
+  s.addText(jpRuns('あなたのケースで動かしてみましょう', 48), {
     x: 0.5, y: 1.07, w: 9, h: 1.20,
-    fontSize: 30, fontFace: F, bold: true, color: C.white, align: 'center'
+ fontFace: F, bold: true, color: C.white, align: 'center'
   });
 
   const cases = [
@@ -628,8 +651,8 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   cases.forEach((c, i) => {
     card(s, 0.5, 2.60 + i * 1.40, 8.95, 1.13, C.blueMid);
     s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 2.60 + i * 1.40, w: 1.1, h: 1.13, fill: { color: C.orange }, line: { color: C.orange } });
-    s.addText(c.label, { x: 0.5, y: 2.60 + i * 1.40, w: 1.1, h: 1.13, fontSize: 13, fontFace: FA, bold: true, color: C.darkNavy, align: 'center', valign: 'middle', margin: 0 });
-    s.addText(c.text, { x: 1.75, y: 2.60 + i * 1.40, w: 7.5, h: 1.13, fontSize: 16, fontFace: F, color: C.white, valign: 'middle' });
+    s.addText(c.label, { x: 0.5, y: 2.60 + i * 1.40, w: 1.1, h: 1.13, fontSize: 28, fontFace: FA, bold: true, color: C.darkNavy, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(c.text, { x: 1.75, y: 2.60 + i * 1.40, w: 7.5, h: 1.13, fontSize: 28, fontFace: F, color: C.white, valign: 'middle' });
   });
 
   redBox(s, 2.5, 6.80, 5.0, 0.40, '▶　シミュレーター　デモ', 14);
@@ -647,13 +670,13 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 2.07, w: 0.20, h: 2.20, fill: { color: C.blueLight }, line: { color: C.blueLight } });
   s.addText('状況：学費の心配がなくなった。資産形成のフルパワー期\n今まで学費に使っていたお金が丸ごと老後資金に回せる。', {
     x: 0.87, y: 2.13, w: 8.4, h: 2.07,
-    fontSize: 18, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.5
+    fontSize: 28, fontFace: F, color: C.bodyText, valign: 'middle', lineSpacingMultiple: 1.5
   });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 4.60, w: 9.0, h: 0.73, fill: { color: C.blueLight }, line: { color: C.blueLight } });
   s.addText('このタイミングを逃さないことが最重要', {
     x: 0.5, y: 4.60, w: 9.0, h: 0.73,
-    fontSize: 17, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0
+    fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0
   });
 }
 
@@ -680,17 +703,17 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   const tableD = [
     [{ text: '', options: { fill: { color: C.offWhite } } },
-     { text: 'お金に余裕がある', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 14 } },
-     { text: 'お金が足りない', options: { fill: { color: C.blueMid }, color: C.white, bold: true, fontSize: 14 } }],
-    [{ text: 'A 大学生', options: { fill: { color: C.blueCard }, bold: true, fontSize: 13, color: C.blue } },
-     { text: '保険で増やし\n使い始める', options: { fontSize: 13, color: C.blue } },
-     { text: '覚悟を持って\nNISA', options: { fontSize: 13, color: C.bodyText } }],
-    [{ text: 'B 中学生', options: { fill: { color: C.greenCard }, bold: true, fontSize: 13, color: C.blueMid } },
-     { text: '老後まで試算\n長期保険＋NISA', options: { fontSize: 13, color: C.blue } },
-     { text: '奨学金活用\n流動性確保', options: { fontSize: 13, color: C.bodyText } }],
-    [{ text: 'C 社会人', options: { fill: { color: 'E8F5E9' }, bold: true, fontSize: 13, color: C.blueLight } },
-     { text: '使う計画＋\n長期保険で固定', options: { fontSize: 13, color: C.blue } },
-     { text: 'NISA全力\n長く働く', options: { fontSize: 13, color: C.bodyText } }],
+     { text: 'お金に余裕がある', options: { fill: { color: C.blue }, color: C.white, bold: true, fontSize: 28 } },
+     { text: 'お金が足りない', options: { fill: { color: C.blueMid }, color: C.white, bold: true, fontSize: 28 } }],
+    [{ text: 'A 大学生', options: { fill: { color: C.blueCard }, bold: true, fontSize: 28, color: C.blue } },
+     { text: '保険で増やし\n使い始める', options: { fontSize: 28, color: C.blue } },
+     { text: '覚悟を持って\nNISA', options: { fontSize: 28, color: C.bodyText } }],
+    [{ text: 'B 中学生', options: { fill: { color: C.greenCard }, bold: true, fontSize: 28, color: C.blueMid } },
+     { text: '老後まで試算\n長期保険＋NISA', options: { fontSize: 28, color: C.blue } },
+     { text: '奨学金活用\n流動性確保', options: { fontSize: 28, color: C.bodyText } }],
+    [{ text: 'C 社会人', options: { fill: { color: 'E8F5E9' }, bold: true, fontSize: 28, color: C.blueLight } },
+     { text: '使う計画＋\n長期保険で固定', options: { fontSize: 28, color: C.blue } },
+     { text: 'NISA全力\n長く働く', options: { fontSize: 28, color: C.bodyText } }],
   ];
   s.addTable(tableD, {
     x: 0.5, y: 1.47, w: 9.0, h: 5.47,
@@ -708,15 +731,15 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   card(s, 0.5, 1.47, 9.0, 2.80, C.blueCard);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 1.47, w: 0.20, h: 2.80, fill: { color: C.blue }, line: { color: C.blue } });
-  s.addText('死亡保険金の非課税枠', { x: 0.87, y: 1.53, w: 8.4, h: 0.67, fontSize: 16, fontFace: F, bold: true, color: C.blue, valign: 'middle' });
-  s.addText('500万円 × 法定相続人の数  まで非課税', { x: 0.87, y: 2.27, w: 8.4, h: 0.93, fontSize: 24, fontFace: F, bold: true, color: C.blue, valign: 'middle' });
-  s.addText('例：相続人3人 → 1,500万円まで相続税ゼロ', { x: 0.87, y: 3.33, w: 8.4, h: 0.73, fontSize: 14, fontFace: F, color: C.gray, valign: 'middle' });
+  s.addText('死亡保険金の非課税枠', { x: 0.87, y: 1.53, w: 8.4, h: 0.67, fontSize: 28, fontFace: F, bold: true, color: C.blue, valign: 'middle' });
+  s.addText(jpRuns('500万円 × 法定相続人の数  まで非課税', 44), { x: 0.87, y: 2.27, w: 8.4, h: 0.93, fontFace: F, bold: true, color: C.blue, valign: 'middle' });
+  s.addText('例：相続人3人 → 1,500万円まで相続税ゼロ', { x: 0.87, y: 3.33, w: 8.4, h: 0.73, fontSize: 28, fontFace: F, color: C.gray, valign: 'middle' });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 4.67, w: 9.0, h: 1.73, fill: { color: C.blue }, line: { color: C.blue } });
   s.addShape(pres.shapes.RECTANGLE, { x: 0.5, y: 4.67, w: 0.20, h: 1.73, fill: { color: C.orange }, line: { color: C.orange } });
-  s.addText('「増やす」＋「万一のとき非課税で渡せる」\n一時払い保険は二重においしい', {
+  s.addText(jpRuns('「増やす」＋「万一のとき非課税で渡せる」\n一時払い保険は二重においしい', 32), {
     x: 0.87, y: 4.73, w: 8.4, h: 1.60,
-    fontSize: 19, fontFace: F, bold: true, color: C.white, valign: 'middle', lineSpacingMultiple: 1.5
+ fontFace: F, bold: true, color: C.white, valign: 'middle', lineSpacingMultiple: 1.5
   });
 }
 
@@ -726,21 +749,21 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
   darkBg(s);
   topBar(s, C.orange);
 
-  s.addText('NISAはひとりでできる。\n保険は違う。', {
+  s.addText(jpRuns('NISAはひとりでできる。\n保険は違う。', 48), {
     x: 0.5, y: 0.27, w: 9, h: 2.00,
-    fontSize: 30, fontFace: F, bold: true, color: C.white,
+ fontFace: F, bold: true, color: C.white,
     align: 'center', lineSpacingMultiple: 1.4
   });
 
   card(s, 0.4, 2.60, 4.2, 3.07, C.blueMid);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: 2.60, w: 4.2, h: 0.67, fill: { color: C.blueLight }, line: { color: C.blueLight } });
-  s.addText('NISA', { x: 0.4, y: 2.60, w: 4.2, h: 0.67, fontSize: 15, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText('口座開設して\n積立設定するだけ\nひとりでOK', { x: 0.4, y: 3.33, w: 4.2, h: 2.20, fontSize: 16, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.4 });
+  s.addText('NISA', { x: 0.4, y: 2.60, w: 4.2, h: 0.67, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText('口座開設して\n積立設定するだけ\nひとりでOK', { x: 0.4, y: 3.33, w: 4.2, h: 2.20, fontSize: 28, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.4 });
 
   card(s, 5.4, 2.60, 4.2, 3.07, C.blueMid);
   s.addShape(pres.shapes.RECTANGLE, { x: 5.4, y: 2.60, w: 4.2, h: 0.67, fill: { color: C.red }, line: { color: C.red } });
-  s.addText('一時払い保険', { x: 5.4, y: 2.60, w: 4.2, h: 0.67, fontSize: 15, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
-  s.addText('商品・期間・金額は\nあなたの状況次第\n相談相手が必要', { x: 5.4, y: 3.33, w: 4.2, h: 2.20, fontSize: 16, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.4 });
+  s.addText('一時払い保険', { x: 5.4, y: 2.60, w: 4.2, h: 0.67, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText('商品・期間・金額は\nあなたの状況次第\n相談相手が必要', { x: 5.4, y: 3.33, w: 4.2, h: 2.20, fontSize: 28, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.4 });
 
   redBox(s, 1.0, 6.00, 8.0, 1.04, '「その相談相手、いますか？」', 26);
 }
@@ -758,24 +781,24 @@ function twoColCards(s, leftTitle, leftItems, rightTitle, rightItems) {
 
   card(s, 0.4, 1.53, 4.2, 4.67, C.blueMid);
   s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: 1.53, w: 4.2, h: 0.73, fill: { color: C.orange }, line: { color: C.orange } });
-  s.addText('特典①　シミュレーター', { x: 0.4, y: 1.53, w: 4.2, h: 0.73, fontSize: 14, fontFace: F, bold: true, color: C.darkNavy, align: 'center', valign: 'middle', margin: 0 });
+  s.addText('特典①　シミュレーター', { x: 0.4, y: 1.53, w: 4.2, h: 0.73, fontSize: 28, fontFace: F, bold: true, color: C.darkNavy, align: 'center', valign: 'middle', margin: 0 });
   s.addText('自分の数字で\n「保険 vs NISA」を\n試せるWebアプリ\n\nhoken-nisa-hikaku.netlify.app', {
     x: 0.4, y: 2.33, w: 4.2, h: 3.73,
-    fontSize: 15, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5
+    fontSize: 28, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5
   });
 
   card(s, 5.4, 1.53, 4.2, 4.67, C.blueMid);
   s.addShape(pres.shapes.RECTANGLE, { x: 5.4, y: 1.53, w: 4.2, h: 0.73, fill: { color: C.red }, line: { color: C.red } });
-  s.addText('特典②　個別相談', { x: 5.4, y: 1.53, w: 4.2, h: 0.73, fontSize: 14, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText('特典②　個別相談', { x: 5.4, y: 1.53, w: 4.2, h: 0.73, fontSize: 28, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
   s.addText('あなたの状況で\n「どうすればいい？」を\n一緒に考えます\n\n無料・30分\n申込フォームをチャットに', {
     x: 5.4, y: 2.33, w: 4.2, h: 3.73,
-    fontSize: 15, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5
+    fontSize: 28, fontFace: F, color: C.white, align: 'center', valign: 'middle', lineSpacingMultiple: 1.5
   });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 1.0, y: 6.53, w: 8.0, h: 0.67, fill: { color: C.blueMid }, line: { color: C.blueMid } });
   s.addText('本日はご参加いただき、ありがとうございました', {
     x: 1.0, y: 6.53, w: 8.0, h: 0.67,
-    fontSize: 14, fontFace: F, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0
+    fontSize: 28, fontFace: F, color: C.orangeLight, align: 'center', valign: 'middle', margin: 0
   });
 
   bottomBar(s, C.red);

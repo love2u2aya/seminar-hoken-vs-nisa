@@ -690,6 +690,21 @@ function drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths)
               };
               const lbl = map[c.dataset.label] || c.dataset.label;
               return ` ${lbl}：${c.parsed.y.toLocaleString('ja-JP')} 万円`;
+            },
+            afterBody: items => {
+              if (!mcPaths || items.length === 0) return '';
+              const yIdx = items[0].dataIndex;
+              if (yIdx === 0) return '';
+              const N = mcPaths.length;
+              let below = 0;
+              for (let i = 0; i < N; i++) {
+                if (mcPaths[i][yIdx] < total) below++;
+              }
+              const pct = ((below / N) * 100).toFixed(1);
+              return [
+                '',
+                `元本割れ：${below} / ${N} 本（${pct}%）`
+              ];
             }
           }
         }

@@ -10,21 +10,27 @@ pres.title = '変額・一時払保険・NISA 比較セミナー';
 // =========================================================
 // カラー・フォント
 // =========================================================
+// Midnight Gold パレット（支払方法グループ濃淡構成）
+//   毎月グループ（明るい金系）  : 変額 EFB509 / NISA F4C430
+//   一時払グループ（濃い紺系） : 貯蓄 16253D（midnight）/ 保障 002C54（dusk）
 const C = {
-  navy:       '1A365D',
-  green:      '276749',
-  gold:       'D4A017',
-  teal:       '2B7A78', // 変額保険専用色
-  red:        'C53030',
+  // 基本（タイトルバー・本文・強調共通）
+  navy:       '16253D',  // midnight：タイトルバー・本文
+  gold:       'EFB509',  // golden  ：結論・強調
+  red:        'C53030',  // 注意・リスク
   white:      'FFFFFF',
-  offWhite:   'F7FAFC',
-  lightNavy:  'EBF4FF',
-  lightGreen: 'E6F4EC',
-  lightGold:  'FEF9E7',
-  lightTeal:  'D6EEEC',
+  offWhite:   'F8F5F2',  // pearl
   gray:       '4A5568',
   lightGray:  'CBD5E0',
-  bodyText:   '2D3748',
+  bodyText:   '16253D',
+  // 互換用エイリアス（旧slotを残す）
+  darkNavy:   '002C54',
+  teal:       'EFB509',
+  green:      'F4C430',
+  lightNavy:  'B8C6D9',
+  lightGold:  'D9E2EC',
+  lightTeal:  'FFF3C2',
+  lightGreen: 'FFFAE0',
 };
 const F  = 'Meiryo';
 const FA = 'Arial';
@@ -81,7 +87,7 @@ function fourCards(s, y, items) {
   items.forEach((it, i) => {
     const x = startX + i * (cardW + gap);
     s.addShape(pres.shapes.RECTANGLE, { x, y, w: cardW, h: 0.55, fill: { color: it.color }, line: { color: it.color } });
-    s.addText(jpRuns(it.title, 18), {
+    s.addText(jpRuns(it.title, 24), {
       x, y, w: cardW, h: 0.55,
       fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0
     });
@@ -89,23 +95,23 @@ function fourCards(s, y, items) {
       x, y: y + 0.55, w: cardW, h: 3.7,
       fill: { color: it.lightColor }, line: { color: it.color, width: 1 }
     });
-    s.addText(jpRuns(it.body, 14), {
+    s.addText(jpRuns(it.body, 24), {
       x: x + 0.1, y: y + 0.65, w: cardW - 0.2, h: 3.5,
       fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 4
-    });
+    , bold: true });
   });
 }
 
 function twoColCards(s, y, leftTitle, leftBody, leftColor, rightTitle, rightBody, rightColor) {
   s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y, w: 4.55, h: 0.6, fill: { color: leftColor }, line: { color: leftColor } });
-  s.addText(jpRuns(leftTitle, 22), { x: 0.4, y, w: 4.55, h: 0.6, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText(jpRuns(leftTitle, 24), { x: 0.4, y, w: 4.55, h: 0.6, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
   s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: y + 0.6, w: 4.55, h: 4.0, fill: { color: C.white }, line: { color: leftColor, width: 1.5 } });
-  s.addText(jpRuns(leftBody, 18), { x: 0.55, y: y + 0.7, w: 4.25, h: 3.8, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 6 });
+  s.addText(jpRuns(leftBody, 24), { x: 0.55, y: y + 0.7, w: 4.25, h: 3.8, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 6 , bold: true });
 
   s.addShape(pres.shapes.RECTANGLE, { x: 5.05, y, w: 4.55, h: 0.6, fill: { color: rightColor }, line: { color: rightColor } });
-  s.addText(jpRuns(rightTitle, 22), { x: 5.05, y, w: 4.55, h: 0.6, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+  s.addText(jpRuns(rightTitle, 24), { x: 5.05, y, w: 4.55, h: 0.6, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
   s.addShape(pres.shapes.RECTANGLE, { x: 5.05, y: y + 0.6, w: 4.55, h: 4.0, fill: { color: C.white }, line: { color: rightColor, width: 1.5 } });
-  s.addText(jpRuns(rightBody, 18), { x: 5.2, y: y + 0.7, w: 4.25, h: 3.8, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 6 });
+  s.addText(jpRuns(rightBody, 24), { x: 5.2, y: y + 0.7, w: 4.25, h: 3.8, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 6 , bold: true });
 }
 
 function footer(s, num, total) {
@@ -124,11 +130,14 @@ function newSlide(bgColor) {
   return s;
 }
 
+// 商品色：2軸マトリクス
+//   色相＝目的（保障=青系 / 貯蓄=黄系）
+//   明度＝支払方法（一括=濃 / 毎月=薄）
 const PROD = {
-  hengaku: { name: '変額保険',         color: C.teal,  light: C.lightTeal  },
-  ipChoSh: { name: '一時払・貯蓄重視', color: C.gold,  light: C.lightGold  },
-  ipHosh:  { name: '一時払・保障重視', color: C.navy,  light: C.lightNavy  },
-  nisa:    { name: 'NISA',            color: C.green, light: C.lightGreen },
+  hengaku: { name: '変額保険',         color: '4A6FA5', light: 'E1EAF7' }, // 保障系×毎月：薄い青
+  ipHosh:  { name: '一時払・保障重視', color: '16253D', light: 'D9E2EC' }, // 保障系×一括：濃い青
+  nisa:    { name: 'NISA',            color: 'EFB509', light: 'FFF3C2' }, // 貯蓄系×毎月：薄い黄
+  ipChoSh: { name: '一時払・貯蓄重視', color: 'B07A0C', light: 'F4DDA1' }, // 貯蓄系×一括：濃い黄
 };
 
 // ===== Slide 1: 表紙 =====
@@ -163,7 +172,7 @@ const PROD = {
     s.addShape(pres.shapes.OVAL, { x: 0.5, y, w: 1.2, h: 1.2, fill: { color: C.gold }, line: { color: C.gold } });
     s.addText(g.n, { x: 0.5, y, w: 1.2, h: 1.2, fontSize: 44, fontFace: FA, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
     s.addText(jpRuns(g.t, 32), { x: 1.9, y: y + 0.05, w: 7.6, h: 0.7, fontFace: F, bold: true, color: C.navy, align: 'left', valign: 'middle', margin: 0 });
-    s.addText(jpRuns(g.d, 22), { x: 1.9, y: y + 0.7,  w: 7.6, h: 0.5, fontFace: F, color: C.gray, align: 'left', valign: 'middle', margin: 0 });
+    s.addText(jpRuns(g.d, 24), { x: 1.9, y: y + 0.7,  w: 7.6, h: 0.5, fontFace: F, color: C.gray, align: 'left', valign: 'middle', margin: 0 });
   });
   footer(s, slideNo, TOTAL);
 }
@@ -184,7 +193,7 @@ const PROD = {
     const x = 0.4 + (i % 2) * 4.7;
     const y = 1.2 + Math.floor(i / 2) * 1.8;
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w: 4.5, h: 1.5, fill: { color: C.white }, line: { color: C.gold, width: 2 }, rectRadius: 0.1 });
-    s.addText(jpRuns(w, 22), { x: x + 0.2, y, w: 4.1, h: 1.5, fontFace: F, color: C.bodyText, bold: true, align: 'left', valign: 'middle', margin: 0.05 });
+    s.addText(jpRuns(w, 24), { x: x + 0.2, y, w: 4.1, h: 1.5, fontFace: F, color: C.bodyText, bold: true, align: 'left', valign: 'middle', margin: 0.05 });
   });
   footer(s, slideNo, TOTAL);
 }
@@ -208,7 +217,7 @@ const PROD = {
   ];
   places.forEach(pl => {
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: pl.x, y: pl.y, w: 1.8, h: 0.7, fill: { color: pl.p.color }, line: { color: pl.p.color }, rectRadius: 0.08 });
-    s.addText(jpRuns(pl.p.name, 16), { x: pl.x, y: pl.y, w: 1.8, h: 0.7, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(jpRuns(pl.p.name, 24), { x: pl.x, y: pl.y, w: 1.8, h: 0.7, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
   });
   footer(s, slideNo, TOTAL);
 }
@@ -216,15 +225,15 @@ const PROD = {
 // ===== Slide 5: 変額保険 =====
 {
   const s = newSlide();
-  sectionTitle(s, '変額保険とは', PROD.hengaku.color);
-  emphBox(s, 0.4, 0.85, 9.2, 0.7, '保障 ＋ 投資 を 一本化', 30, PROD.hengaku.color);
+  sectionTitle(s, '変額保険とは');
+  emphBox(s, 0.4, 0.85, 9.2, 0.7, '保障 ＋ 投資 を 一本化', 30, C.navy);
   const body =
     '・毎月の保険料を株式・債券などで運用\n' +
     '・運用成績で死亡保険金や解約返戻金が変動\n' +
     '・死亡保険金は最低保証あり（基本保険金額）\n' +
     '・運用益は非課税で再投資される\n' +
     '・解約は原則 長期前提（10年以上）';
-  s.addText(jpRuns(body, 22), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 });
+  s.addText(jpRuns(body, 24), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 , bold: true });
   emphBox(s, 0.4, 6.0, 9.2, 0.6, '長期 ＋ 保障 が必要 な人 向け', 22, C.gold);
   footer(s, slideNo, TOTAL);
 }
@@ -232,15 +241,15 @@ const PROD = {
 // ===== Slide 6: 一時払（貯蓄） =====
 {
   const s = newSlide();
-  sectionTitle(s, '一時払い保険（貯蓄重視）', PROD.ipChoSh.color);
-  emphBox(s, 0.4, 0.85, 9.2, 0.7, 'まとまった資金 を 安全 に 置く', 28, PROD.ipChoSh.color);
+  sectionTitle(s, '一時払い保険（貯蓄重視）');
+  emphBox(s, 0.4, 0.85, 9.2, 0.7, 'まとまった資金 を 安全 に 置く', 28, C.navy);
   const body =
     '・契約時に保険料を一括で支払う\n' +
     '・予定利率や為替で運用（外貨建てが主流）\n' +
     '・死亡保険金は払込額と同程度〜やや上\n' +
     '・据置期間後は元本＋利息で受取可能\n' +
     '・短期解約は元本割れリスクあり';
-  s.addText(jpRuns(body, 22), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 });
+  s.addText(jpRuns(body, 24), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 , bold: true });
   emphBox(s, 0.4, 6.0, 9.2, 0.6, '退職金 など まとまった資金 の 運用先', 22, C.gold);
   footer(s, slideNo, TOTAL);
 }
@@ -248,15 +257,15 @@ const PROD = {
 // ===== Slide 7: 一時払（保障） =====
 {
   const s = newSlide();
-  sectionTitle(s, '一時払い保険（保障重視）', PROD.ipHosh.color);
-  emphBox(s, 0.4, 0.85, 9.2, 0.7, 'まとまった資金 で 保障 を 大きく', 28, PROD.ipHosh.color);
+  sectionTitle(s, '一時払い保険（保障重視）');
+  emphBox(s, 0.4, 0.85, 9.2, 0.7, 'まとまった資金 で 保障 を 大きく', 28, C.navy);
   const body =
     '・一括払いで 死亡保険金が払込額の1.3〜2倍\n' +
     '・相続対策・受取人指定の柔軟性\n' +
     '・健康状態の告知は緩めの商品もある\n' +
     '・運用益より「残す」目的が中心\n' +
     '・解約返戻金は払込額より少ない期間あり';
-  s.addText(jpRuns(body, 22), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 });
+  s.addText(jpRuns(body, 24), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 , bold: true });
   emphBox(s, 0.4, 6.0, 9.2, 0.6, '相続 や 家族 へ 残したい 人 向け', 22, C.gold);
   footer(s, slideNo, TOTAL);
 }
@@ -264,15 +273,15 @@ const PROD = {
 // ===== Slide 8: NISA =====
 {
   const s = newSlide();
-  sectionTitle(s, 'NISAとは', PROD.nisa.color);
-  emphBox(s, 0.4, 0.85, 9.2, 0.7, '運用益 が ずっと 非課税', 30, PROD.nisa.color);
+  sectionTitle(s, 'NISAとは');
+  emphBox(s, 0.4, 0.85, 9.2, 0.7, '運用益 が ずっと 非課税', 30, C.navy);
   const body =
     '・つみたて投資枠：年120万円・長期インデックス向け\n' +
     '・成長投資枠：年240万円・個別株・ETFも可\n' +
     '・生涯非課税枠 1,800万円（売却で枠復活）\n' +
     '・運用益・配当が非課税\n' +
     '・保障機能 なし（純粋な投資制度）';
-  s.addText(jpRuns(body, 22), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 });
+  s.addText(jpRuns(body, 24), { x: 0.5, y: 1.7, w: 9, h: 4.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 8 , bold: true });
   emphBox(s, 0.4, 6.0, 9.2, 0.6, '長期 で 増やしたい 人 の 王道', 22, C.gold);
   footer(s, slideNo, TOTAL);
 }
@@ -305,8 +314,8 @@ const PROD = {
   sectionTitle(s, '選び方フロー：3つの分岐');
   const steps = [
     { q: 'Q1. 保障 は 必要？',                y: 1.2, c: C.navy },
-    { q: 'Q2. 一括 で 払える資金 が ある？',  y: 3.1, c: C.green },
-    { q: 'Q3. 値動き（ブレ） を 許容できる？', y: 5.0, c: C.gold },
+    { q: 'Q2. 一括 で 払える資金 が ある？',  y: 3.1, c: C.navy },
+    { q: 'Q3. 値動き（ブレ） を 許容できる？', y: 5.0, c: C.navy },
   ];
   steps.forEach(st => {
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.5, y: st.y, w: 9, h: 1.4, fill: { color: st.c }, line: { color: st.c }, rectRadius: 0.1 });
@@ -338,12 +347,12 @@ const PROD = {
 {
   const s = newSlide();
   sectionTitle(s, '比較①：結論');
-  emphBox(s, 0.4, 1.0, 9.2, 1.0, '家族 に 残す必要 が あるなら 変額\nそうでないなら NISA', 26, C.green);
+  emphBox(s, 0.4, 1.0, 9.2, 1.0, '家族 に 残す必要 が あるなら 変額\nそうでないなら NISA', 26, C.gold);
   const txt =
     '・小さい子・配偶者がいる → 変額（保障の安心）\n' +
     '・独身・子が独立済み → NISA（コスト効率優先）\n' +
     '・「両方欲しい」場合 → 掛捨て＋NISA も 選択肢';
-  s.addText(jpRuns(txt, 22), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 });
+  s.addText(jpRuns(txt, 24), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 , bold: true });
   emphBox(s, 0.4, 6.1, 9.2, 0.6, '保障 ＝ 変額  /  効率 ＝ NISA', 24, C.navy);
   footer(s, slideNo, TOTAL);
 }
@@ -373,7 +382,7 @@ const PROD = {
     '・退職金・相続資金 がある → 一時払（保障）\n' +
     '・現役世代で コツコツ → 変額\n' +
     '・税の観点：一時払は 相続税の非課税枠 が 強み';
-  s.addText(jpRuns(txt, 22), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 });
+  s.addText(jpRuns(txt, 24), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 , bold: true });
   emphBox(s, 0.4, 6.1, 9.2, 0.6, '一括 ＝ 一時払  /  毎月 ＝ 変額', 24, C.navy);
   footer(s, slideNo, TOTAL);
 }
@@ -398,12 +407,12 @@ const PROD = {
 {
   const s = newSlide();
   sectionTitle(s, '比較③：結論');
-  emphBox(s, 0.4, 1.0, 9.2, 1.0, '資金 が あれば 一時払 が 効率的\n無ければ 変額 で 時間分散', 24, C.green);
+  emphBox(s, 0.4, 1.0, 9.2, 1.0, '資金 が あれば 一時払 が 効率的\n無ければ 変額 で 時間分散', 24, C.gold);
   const txt =
     '・1,000万円以上の余裕資金 → 一時払（保障）\n' +
     '・現役で月3〜5万円 → 変額\n' +
     '・「半分一時払・半分NISA」 など 併用 も 有効';
-  s.addText(jpRuns(txt, 22), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 });
+  s.addText(jpRuns(txt, 24), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 , bold: true });
   emphBox(s, 0.4, 6.1, 9.2, 0.6, '資金力 で 支払方法 を 決める', 24, C.navy);
   footer(s, slideNo, TOTAL);
 }
@@ -433,7 +442,7 @@ const PROD = {
     '・60代以降・取り崩しが近い → 一時払（貯蓄）\n' +
     '・40〜50代・長期で運用 → NISA\n' +
     '・「半分ずつ」 で ブレ を 平均化 する 手 も';
-  s.addText(jpRuns(txt, 22), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 });
+  s.addText(jpRuns(txt, 24), { x: 0.6, y: 2.4, w: 8.8, h: 3.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 10 , bold: true });
   emphBox(s, 0.4, 6.1, 9.2, 0.6, '安定 ＝ 一時払(貯蓄)  /  期待 ＝ NISA', 24, C.navy);
   footer(s, slideNo, TOTAL);
 }
@@ -448,7 +457,7 @@ const PROD = {
     '・想定利回り を 商品別 に 設定\n' +
     '・10年・20年・30年 の 推移 を 比較\n' +
     '・税金 と 手数料 込み の 手取り 表示';
-  s.addText(jpRuns(txt, 24), { x: 0.6, y: 2.6, w: 8.8, h: 3.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 12 });
+  s.addText(jpRuns(txt, 24), { x: 0.6, y: 2.6, w: 8.8, h: 3.0, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0.05, paraSpaceAfter: 12 , bold: true });
   emphBox(s, 0.4, 6.0, 9.2, 0.6, '※ 配布 URL から アクセス', 20, C.navy);
   footer(s, slideNo, TOTAL);
 }
@@ -470,7 +479,7 @@ const PROD = {
   let cx = x0;
   headers.forEach((h, i) => {
     s.addShape(pres.shapes.RECTANGLE, { x: cx, y: yT, w: colW[i], h: 0.6, fill: { color: C.navy }, line: { color: C.navy } });
-    s.addText(h, { x: cx, y: yT, w: colW[i], h: 0.6, fontSize: 18, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(h, { x: cx, y: yT, w: colW[i], h: 0.6, fontSize: 24, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
     cx += colW[i];
   });
   yT += 0.6;
@@ -479,7 +488,7 @@ const PROD = {
     const rowColor = [PROD.hengaku.light, PROD.ipChoSh.light, PROD.ipHosh.light, PROD.nisa.light][ri];
     r.forEach((v, i) => {
       s.addShape(pres.shapes.RECTANGLE, { x: cx2, y: yT, w: colW[i], h: 0.85, fill: { color: rowColor }, line: { color: C.lightGray } });
-      s.addText(jpRuns(v, 18), { x: cx2, y: yT, w: colW[i], h: 0.85, fontFace: F, color: C.bodyText, bold: i === 0, align: 'center', valign: 'middle', margin: 0 });
+      s.addText(jpRuns(v, 24), { x: cx2, y: yT, w: colW[i], h: 0.85, fontFace: F, color: C.bodyText, bold: i === 0, align: 'center', valign: 'middle', margin: 0 });
       cx2 += colW[i];
     });
     yT += 0.85;
@@ -503,9 +512,9 @@ const PROD = {
   cases.forEach((cs, i) => {
     const y = 1.0 + i * 0.95;
     s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y, w: 4.6, h: 0.85, fill: { color: C.white }, line: { color: C.lightGray } });
-    s.addText(jpRuns(cs.c, 20), { x: 0.5, y, w: 4.4, h: 0.85, fontFace: F, color: C.bodyText, align: 'left', valign: 'middle', margin: 0 });
+    s.addText(jpRuns(cs.c, 24), { x: 0.5, y, w: 4.4, h: 0.85, fontFace: F, color: C.bodyText, align: 'left', valign: 'middle', margin: 0 , bold: true });
     s.addShape(pres.shapes.RECTANGLE, { x: 5.0, y, w: 4.6, h: 0.85, fill: { color: cs.col }, line: { color: cs.col } });
-    s.addText(jpRuns(cs.a, 20), { x: 5.0, y, w: 4.6, h: 0.85, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(jpRuns(cs.a, 24), { x: 5.0, y, w: 4.6, h: 0.85, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
   });
   footer(s, slideNo, TOTAL);
 }
@@ -558,7 +567,7 @@ const PROD = {
     s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y, w: 9.2, h: 0.6, fill: { color: cb.c }, line: { color: cb.c } });
     s.addText(jpRuns(cb.t, 24), { x: 0.4, y, w: 9.2, h: 0.6, fontFace: F, bold: true, color: C.white, align: 'center', valign: 'middle', margin: 0 });
     s.addShape(pres.shapes.RECTANGLE, { x: 0.4, y: y + 0.6, w: 9.2, h: 1.1, fill: { color: C.white }, line: { color: cb.c, width: 1.5 } });
-    s.addText(jpRuns(cb.d, 20), { x: 0.6, y: y + 0.6, w: 9.0, h: 1.1, fontFace: F, color: C.bodyText, align: 'left', valign: 'middle', margin: 0.05 });
+    s.addText(jpRuns(cb.d, 24), { x: 0.6, y: y + 0.6, w: 9.0, h: 1.1, fontFace: F, color: C.bodyText, align: 'left', valign: 'middle', margin: 0.05 , bold: true });
   });
   emphBox(s, 0.4, 6.7, 9.2, 0.5, '一本 で なく 組み合わせ で 弱点 を 補う', 18, C.navy);
   footer(s, slideNo, TOTAL);
@@ -580,8 +589,8 @@ const PROD = {
   ];
   faqs.forEach((f, i) => {
     const y = 0.85 + i * 1.5;
-    s.addText(jpRuns(f.q, 20), { x: 0.4, y, w: 9.2, h: 0.5, fontFace: F, bold: true, color: C.navy, align: 'left', valign: 'middle', margin: 0 });
-    s.addText(jpRuns(f.a, 18), { x: 0.6, y: y + 0.5, w: 9.0, h: 0.9, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0 });
+    s.addText(jpRuns(f.q, 24), { x: 0.4, y, w: 9.2, h: 0.5, fontFace: F, bold: true, color: C.navy, align: 'left', valign: 'middle', margin: 0 });
+    s.addText(jpRuns(f.a, 24), { x: 0.6, y: y + 0.5, w: 9.0, h: 0.9, fontFace: F, color: C.bodyText, align: 'left', valign: 'top', margin: 0 , bold: true });
   });
   footer(s, slideNo, TOTAL);
 }
@@ -597,7 +606,7 @@ const PROD = {
     x: 0.5, y: 3.7, w: 9, h: 1.0, fontFace: F, color: C.lightGray, align: 'center', valign: 'middle', margin: 0
   });
   s.addText('Thank you for joining', {
-    x: 0.5, y: 5.2, w: 9, h: 0.5, fontSize: 18, fontFace: FA, italic: true, color: C.gold, align: 'center', margin: 0
+    x: 0.5, y: 5.2, w: 9, h: 0.5, fontSize: 24, fontFace: FA, italic: true, color: C.gold, align: 'center', margin: 0
   });
 }
 
@@ -613,9 +622,9 @@ const PROD = {
     '★ 強引 な 勧誘 は 一切 ありません',
   ];
   lines.forEach((ln, i) => {
-    s.addText(jpRuns(ln, 22), { x: 0.6, y: 2.5 + i * 0.6, w: 8.8, h: 0.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'middle', margin: 0 });
+    s.addText(jpRuns(ln, 24), { x: 0.6, y: 2.5 + i * 0.6, w: 8.8, h: 0.5, fontFace: F, color: C.bodyText, align: 'left', valign: 'middle', margin: 0 , bold: true });
   });
-  emphBox(s, 0.4, 5.4, 9.2, 0.8, 'お申込み は 受付 の QR から', 26, C.green);
+  emphBox(s, 0.4, 5.4, 9.2, 0.8, 'お申込み は 受付 の QR から', 26, C.gold);
   s.addText('Money Navigation Seminar', {
     x: 0.5, y: 6.5, w: 9, h: 0.4, fontSize: 14, fontFace: FA, italic: true, color: C.gray, align: 'center', margin: 0
   });

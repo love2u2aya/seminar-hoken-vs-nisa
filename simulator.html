@@ -339,11 +339,23 @@
         <div class="field" style="margin:0;">
           <label>シミュレーション本数</label>
           <div class="input-wrap">
-            <input type="number" id="mc-paths" value="50" min="3" max="2000" step="1">
+            <input type="number" id="mc-paths" value="200" min="3" max="2000" step="1">
             <span class="unit">本</span>
           </div>
         </div>
         <button type="button" class="reshuffle-btn" onclick="calculate()">🎲 再シャッフル</button>
+      </div>
+
+      <!-- 極端排除 -->
+      <div class="mc-toggle">
+        <label class="switch">
+          <input type="checkbox" id="trim-enabled" onchange="calculate()">
+          <span class="slider-sw"></span>
+        </label>
+        <div class="mc-label">
+          <strong>✂️ 極端な結果を排除（上下5本ずつ削除）</strong>
+          <span class="mc-desc">最終値が極端に高い／低い5本を除外。ハズレ値を取り除いた現実的なレンジを表示</span>
+        </div>
       </div>
 
       <!-- 半額ショック -->
@@ -420,8 +432,348 @@
     <button class="reset-btn" onclick="resetResults()">条件をリセットして再計算</button>
   </div>
 
+  <!-- ============================================ -->
+  <!-- 🔒 シークレット：一括 vs 分割 戦略比較 -->
+  <!-- ============================================ -->
+  <div class="secret-section">
+    <button class="secret-toggle" id="secret-toggle-btn" onclick="toggleSecret()">🔒 シークレット機能 🍓</button>
+
+    <!-- パスワード入力フォーム -->
+    <div class="secret-locked" id="secret-locked" style="display:none;">
+      <div class="secret-locked-card">
+        <h3>🔒 パスワード を 入力</h3>
+        <p>関係者向けの特殊機能です。パスワードを入力してください。</p>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="password" id="secret-pw" placeholder="パスワード" onkeypress="if(event.key==='Enter')checkSecret()">
+          <button onclick="checkSecret()">解錠</button>
+        </div>
+        <div id="secret-error" style="color:#c53030; font-size:0.85rem; margin-top:8px; display:none;">パスワードが違います</div>
+      </div>
+    </div>
+
+    <!-- 解錠後の本体 -->
+    <div class="secret-content" id="secret-content" style="display:none;">
+      <div class="common-card">
+        <div class="section-title" style="color:#c53030;">🔓 一括 vs 分割 戦略比較</div>
+        <p style="font-size:0.82rem; color:#718096; margin-bottom:14px;">
+          同じ金額を、(A) 全額一括 / (B) 半々 / (C) 全額分割 で運用した場合の比較。
+        </p>
+
+        <div class="common-grid">
+          <div>
+            <div class="field">
+              <label>投資総額</label>
+              <div class="input-wrap">
+                <input type="number" id="sec-total" value="1000" min="1" max="999999">
+                <span class="unit">万円</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>運用期間</label>
+              <div class="input-wrap">
+                <input type="number" id="sec-years" value="10" min="1" max="50">
+                <span class="unit">年</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="field">
+              <label>一括の固定レート（一時払い保険等）</label>
+              <div class="input-wrap">
+                <input type="number" id="sec-fixed-rate" value="4" min="0" max="20" step="0.1">
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>分割投資の期待利回り（中央値）</label>
+              <div class="input-wrap">
+                <input type="number" id="sec-rate" value="8" min="0.1" max="30" step="0.1">
+                <span class="unit">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="common-grid" style="margin-top:8px;">
+          <div>
+            <div class="field">
+              <label>分割期間</label>
+              <div class="input-wrap">
+                <input type="number" id="sec-dca-months" value="120" min="1" max="600">
+                <span class="unit">ヶ月</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>ブレ幅・標準偏差</label>
+              <div class="input-wrap">
+                <input type="number" id="sec-sigma" value="18" min="0" max="50" step="1">
+                <span class="unit">%</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="field">
+              <label>モンテカルロ本数</label>
+              <div class="input-wrap">
+                <input type="number" id="sec-paths" value="500" min="10" max="2000" step="10">
+                <span class="unit">本</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="calc-btn" style="background:linear-gradient(135deg,#c53030,#e6720e);" onclick="calcSecret()">3パターンで比較する</button>
+
+        <!-- 結果 -->
+        <div id="secret-results" style="display:none;">
+          <div class="result-cards" style="grid-template-columns:1fr 1fr 1fr;">
+            <div class="result-card" style="background:linear-gradient(135deg,#fed7d7,#fc8181);">
+              <div class="rlabel" style="color:#9b2c2c;">A. 全額一括</div>
+              <div class="amount" id="sec-result-a" style="color:#742a2a;">—</div>
+              <div class="sub">万円（中央値）</div>
+              <div id="sec-range-a"></div>
+            </div>
+            <div class="result-card" style="background:linear-gradient(135deg,#fefcbf,#f6e05e);">
+              <div class="rlabel" style="color:#744210;">B. 半々（50/50）</div>
+              <div class="amount" id="sec-result-b" style="color:#5a3a00;">—</div>
+              <div class="sub">万円（中央値）</div>
+              <div id="sec-range-b"></div>
+            </div>
+            <div class="result-card" style="background:linear-gradient(135deg,#bee3f8,#63b3ed);">
+              <div class="rlabel" style="color:#2c5282;">C. 全額分割</div>
+              <div class="amount" id="sec-result-c" style="color:#2a4365;">—</div>
+              <div class="sub">万円（中央値）</div>
+              <div id="sec-range-c"></div>
+            </div>
+          </div>
+          <div class="chart-card" style="margin-top:16px;">
+            <h3>3パターンの推移</h3>
+            <canvas id="sec-chart" height="240"></canvas>
+          </div>
+          <div class="note-card" style="margin-top:14px;">
+            <strong>解説</strong>
+            上昇相場では (A)一括 が最も伸びます。下落相場では (C)分割 が有利。(B)半々 はバランス型でメンタル耐性を確保しつつ機会損失を抑えます。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
+<script>
+// ===== 🔒 シークレット機能 =====
+const SECRET_PW = 'ichigo'; // パスワード（変更可）
+
+function toggleSecret() {
+  const locked = document.getElementById('secret-locked');
+  const content = document.getElementById('secret-content');
+  // 既に解錠済みなら content をトグル
+  if (content.dataset.unlocked === '1') {
+    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+  } else {
+    locked.style.display = locked.style.display === 'none' ? 'block' : 'none';
+  }
+}
+function checkSecret() {
+  const pw = document.getElementById('secret-pw').value;
+  if (pw === SECRET_PW) {
+    document.getElementById('secret-locked').style.display = 'none';
+    const content = document.getElementById('secret-content');
+    content.style.display = 'block';
+    content.dataset.unlocked = '1';
+    document.getElementById('secret-toggle-btn').textContent = '🔓 シークレット機能 🍓（解錠中）';
+  } else {
+    document.getElementById('secret-error').style.display = 'block';
+  }
+}
+
+let secChart = null;
+function calcSecret() {
+  const total = parseFloat(document.getElementById('sec-total').value) || 0;
+  const years = parseInt(document.getElementById('sec-years').value) || 1;
+  const rateFixed = parseFloat(document.getElementById('sec-fixed-rate').value) / 100 || 0;
+  const rate = parseFloat(document.getElementById('sec-rate').value) / 100 || 0;
+  const dcaMonths = parseInt(document.getElementById('sec-dca-months').value) || 12;
+  const sigma = parseFloat(document.getElementById('sec-sigma').value) / 100 || 0;
+  const N = Math.max(10, Math.min(2000, parseInt(document.getElementById('sec-paths').value) || 500));
+  const totalMonths = years * 12;
+
+  // 一括（固定レート）：deterministic
+  // amount を Day 0 で一括投入、月次複利で fixed rate を適用
+  function fixedLumpPath(amount) {
+    const arr = [amount];
+    let bal = amount;
+    const mr = rateFixed / 12;
+    for (let m = 1; m <= totalMonths; m++) {
+      bal = bal * (1 + mr);
+      arr.push(bal);
+    }
+    return arr;
+  }
+
+  // DCA（モンテカルロ）：年ごとに正規分布で年率抽選
+  function dcaMcPath(amount, dcaSplitMonths) {
+    const arr = [0];
+    let bal = 0;
+    const monthly = amount / dcaSplitMonths;
+    let yearAnnR = rate + sigma * gaussRand();
+    let yearMR = yearAnnR / 12;
+    for (let m = 1; m <= totalMonths; m++) {
+      if (m > 1 && m % 12 === 1) {
+        yearAnnR = rate + sigma * gaussRand();
+        yearMR = yearAnnR / 12;
+      }
+      bal = bal * (1 + yearMR);
+      if (m <= dcaSplitMonths) bal += monthly;
+      arr.push(bal);
+    }
+    return arr;
+  }
+
+  // パス集計（各時点）
+  const pct = (arr, q) => arr[Math.floor(q * (arr.length - 1))];
+  function statsPerMonth(paths, ms) {
+    const med = [], lo = [], hi = [];
+    for (let m = 0; m <= ms; m++) {
+      const vals = paths.map(p => p[m]).slice().sort((a, b) => a - b);
+      med.push(vals[Math.floor(vals.length / 2)]);
+      lo.push(pct(vals, 0.10));
+      hi.push(pct(vals, 0.90));
+    }
+    return { med, lo, hi };
+  }
+
+  // === A. 全額一括（固定レート、確定値） ===
+  const pathA = fixedLumpPath(total);
+
+  // === B. 半々：固定一括(half) + DCA-MC(half) ===
+  const lumpHalfPath = fixedLumpPath(total / 2);
+  const dcaHalfPaths = [];
+  for (let i = 0; i < N; i++) dcaHalfPaths.push(dcaMcPath(total / 2, dcaMonths));
+  const pathsB = dcaHalfPaths.map(p => p.map((v, j) => v + lumpHalfPath[j]));
+  const statsB = statsPerMonth(pathsB, totalMonths);
+
+  // === C. 全額DCA（MC） ===
+  const pathsC = [];
+  for (let i = 0; i < N; i++) pathsC.push(dcaMcPath(total, dcaMonths));
+  const statsC = statsPerMonth(pathsC, totalMonths);
+
+  // 結果表示
+  const fmt = v => Math.round(v).toLocaleString('ja-JP');
+  document.getElementById('sec-result-a').textContent = fmt(pathA[totalMonths]);
+  document.getElementById('sec-result-b').textContent = fmt(statsB.med[totalMonths]);
+  document.getElementById('sec-result-c').textContent = fmt(statsC.med[totalMonths]);
+
+  function setRange(id, lo, hi) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML =
+      `<div style="font-size:0.78rem; margin-top:6px; color:#4a5568;">` +
+      `下位10%：<strong>${fmt(lo)}万</strong> / 上位10%：<strong>${fmt(hi)}万</strong>` +
+      `</div>`;
+  }
+  // A は確定値なのでレンジなし
+  document.getElementById('sec-range-a').innerHTML =
+    `<div style="font-size:0.78rem; margin-top:6px; color:#4a5568;">確定値（固定レート）</div>`;
+  setRange('sec-range-b', statsB.lo[totalMonths], statsB.hi[totalMonths]);
+  setRange('sec-range-c', statsC.lo[totalMonths], statsC.hi[totalMonths]);
+
+  // チャート
+  const labels = [];
+  for (let m = 0; m <= totalMonths; m++) {
+    if (m % 12 === 0) labels.push((m/12) + '年');
+    else labels.push('');
+  }
+  if (secChart) secChart.destroy();
+  const ctx = document.getElementById('sec-chart').getContext('2d');
+
+  // データセット：B/Cは 90% (上端) / 10% (下端、fill: '-1') / 中央値 の3段
+  const ds = [
+    // A：固定レート確定値
+    {
+      label: 'A. 全額一括（固定）',
+      data: pathA.map(v => Math.round(v)),
+      borderColor: '#c53030', borderWidth: 3, pointRadius: 0, tension: 0.2, fill: false,
+      _show: true,
+    },
+    // B：上端
+    { label: 'B 上位10%', data: statsB.hi.map(v=>Math.round(v)),
+      borderColor: 'rgba(214,158,46,0)', borderWidth: 0, pointRadius: 0, tension: 0.2, fill: false, _show: false },
+    // B：下端（上端へfill）
+    { label: 'B 下位10%', data: statsB.lo.map(v=>Math.round(v)),
+      borderColor: 'rgba(214,158,46,0)', borderWidth: 0, pointRadius: 0, tension: 0.2,
+      fill: '-1', backgroundColor: 'rgba(214,158,46,0.18)', _show: false },
+    // B：中央値
+    { label: 'B. 半々（中央値）', data: statsB.med.map(v=>Math.round(v)),
+      borderColor: '#d69e2e', borderWidth: 3, pointRadius: 0, tension: 0.2, fill: false, _show: true },
+    // C：上端
+    { label: 'C 上位10%', data: statsC.hi.map(v=>Math.round(v)),
+      borderColor: 'rgba(49,130,206,0)', borderWidth: 0, pointRadius: 0, tension: 0.2, fill: false, _show: false },
+    // C：下端
+    { label: 'C 下位10%', data: statsC.lo.map(v=>Math.round(v)),
+      borderColor: 'rgba(49,130,206,0)', borderWidth: 0, pointRadius: 0, tension: 0.2,
+      fill: '-1', backgroundColor: 'rgba(49,130,206,0.16)', _show: false },
+    // C：中央値
+    { label: 'C. 全額分割（中央値）', data: statsC.med.map(v=>Math.round(v)),
+      borderColor: '#3182ce', borderWidth: 3, pointRadius: 0, tension: 0.2, fill: false, _show: true },
+  ];
+
+  secChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: ds },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true, position: 'top',
+          labels: {
+            filter: (legendItem) => !/^[BC] (上位|下位)\d+%$/.test(legendItem.text)
+          }
+        },
+        tooltip: {
+          filter: c => !/^[BC] (上位|下位)\d+%$/.test(c.dataset.label),
+          callbacks: { label: c => ` ${c.dataset.label}：${c.parsed.y.toLocaleString('ja-JP')} 万円` }
+        }
+      },
+      scales: {
+        y: { ticks: { callback: v => `${v.toLocaleString('ja-JP')}万`, font:{size:11} }, grid:{color:'rgba(0,0,0,0.05)'} },
+        x: { ticks: { font:{size:11}, autoSkip:true, maxTicksLimit:11 }, grid:{display:false} }
+      }
+    }
+  });
+  document.getElementById('secret-results').style.display = 'block';
+}
+
+</script>
+<style>
+  /* シークレット機能用 */
+  .secret-section { margin-top: 32px; padding-top: 16px; border-top: 1px dashed #e2e8f0; }
+  .secret-toggle {
+    display: block; margin: 0 auto;
+    padding: 6px 14px;
+    background: transparent; color: #a0aec0;
+    border: 1.5px dashed #cbd5e0; border-radius: 8px;
+    font-size: 0.78rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .secret-toggle:hover { color: #718096; border-color: #a0aec0; }
+  .secret-locked-card {
+    background: white; border: 2px solid #c53030; border-radius: 12px;
+    padding: 18px 22px; margin-top: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .secret-locked-card h3 { font-size: 1rem; font-weight: 800; color: #c53030; margin-bottom: 6px; }
+  .secret-locked-card p { font-size: 0.82rem; color: #718096; margin-bottom: 10px; }
+  .secret-locked-card input {
+    flex: 1; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+    font-size: 0.95rem; outline: none;
+  }
+  .secret-locked-card input:focus { border-color: #c53030; }
+  .secret-locked-card button {
+    padding: 9px 16px; background: #c53030; color: white;
+    border: none; border-radius: 8px; font-weight: 700; cursor: pointer;
+  }
+</style>
 <script>
 let selectedYears = 10;
 let chartInstance = null;
@@ -526,12 +878,23 @@ function calculate() {
   if (mcOn) {
     // モンテカルロ：N本の最終値からパーセンタイルを取る
     const N = Math.max(3, Math.min(2000, parseInt(document.getElementById('mc-paths').value) || 50));
+    const trimOn = document.getElementById('trim-enabled') && document.getElementById('trim-enabled').checked;
     mcPaths = [];
     // ショックON時：各パスごとに 1〜min(years,10) のうちランダムな年に半額ショックを設定
     const shockMaxYear = Math.min(years, 10);
     for (let i = 0; i < N; i++) {
       const shockYear = shockOn ? (Math.floor(Math.random() * shockMaxYear) + 1) : null;
       mcPaths.push(nisaRandomPath(monthly, nisaRate, nisaSigma, years, shockYear));
+    }
+    // 極端排除：最終値の上下5本ずつを除外（N>=15のときのみ適用）
+    if (trimOn && mcPaths.length >= 15) {
+      const indexed = mcPaths.map((p, idx) => ({ idx, fin: p[p.length - 1] }));
+      indexed.sort((a, b) => a.fin - b.fin);
+      const removeIdx = new Set([
+        ...indexed.slice(0, 5).map(x => x.idx),                       // 下位5
+        ...indexed.slice(indexed.length - 5).map(x => x.idx),         // 上位5
+      ]);
+      mcPaths = mcPaths.filter((_, i) => !removeIdx.has(i));
     }
     const finals = mcPaths.map(p => p[p.length - 1]).slice().sort((a, b) => a - b);
     const pct = q => finals[Math.min(finals.length - 1, Math.max(0, Math.floor(q * (finals.length - 1))))];
@@ -569,10 +932,13 @@ function calculate() {
     }
   });
 
+  const trimOn = document.getElementById('trim-enabled') && document.getElementById('trim-enabled').checked;
   document.getElementById('chart-sub').textContent = mcOn
-    ? (shockOn
-        ? `モンテカルロ ${mcPaths.length}本 ＋ 各パスに半額ショック1回（最初の${Math.min(years,10)}年内のどこか）`
-        : `モンテカルロ：${mcPaths.length}本のランダムパス（毎年の年率は正規分布から抽選）`)
+    ? (
+        `モンテカルロ ${mcPaths.length}本` +
+        (shockOn ? ` ＋ 各パスに半額ショック1回（最初の${Math.min(years,10)}年内のどこか）` : '') +
+        (trimOn  ? ` ／ 上下5本を除外（極端排除）` : '')
+      )
     : 'NISAの緑の帯＝ブレの範囲（±1σシナリオ）';
 
   drawChart(total, insRate, monthly, nisaRate, nisaSigma, years, mcPaths);
